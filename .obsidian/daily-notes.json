@@ -1,0 +1,6 @@
+{
+  "folder": "docs/Diario",
+  "template": "docs/Templates/Diario",
+  "format": "YYYY-MM-DD",
+  "autorun": false
+}

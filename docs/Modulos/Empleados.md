@@ -12,16 +12,19 @@ Gestión del personal del gimnasio: registro, edición, activación/desactivaci�
 
 | Modelo | Tabla | Descripción |
 |--------|-------|-------------|
+| Usuario | `usuarios` | Cuentas de acceso (Admin/Recepcionista) |
 | Empleado | `empleados` | Datos del personal del gimnasio |
+| Horario | `horarios` | Turnos flexibles por empleado y día |
 
 ## Endpoints API
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | GET | `/api/empleados` | Listar empleados |
-| POST | `/api/empleados` | Crear empleado |
-| GET | `/api/empleados/:id` | Obtener empleado |
+| POST | `/api/empleados` | Crear empleado (y sus horarios iniciales) |
+| GET | `/api/empleados/:id` | Obtener empleado (incluye horarios) |
 | PUT | `/api/empleados/:id` | Actualizar empleado |
+| PUT | `/api/empleados/:id/horarios` | Modificar los turnos del empleado |
 | DELETE | `/api/empleados/:id` | Desactivar empleado |
 
 ## Componentes UI

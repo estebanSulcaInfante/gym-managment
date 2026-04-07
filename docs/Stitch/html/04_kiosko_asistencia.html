@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary": "#ffffff",
+              "surface-container-high": "#e7e8e9",
+              "primary-fixed": "#d8e2ff",
+              "on-secondary-fixed": "#001a41",
+              "inverse-on-surface": "#f0f1f2",
+              "on-secondary": "#ffffff",
+              "tertiary-fixed": "#ffdbcc",
+              "inverse-primary": "#adc6ff",
+              "tertiary-container": "#c64f00",
+              "inverse-surface": "#2e3132",
+              "on-error": "#ffffff",
+              "on-primary-fixed-variant": "#004493",
+              "on-tertiary-container": "#fffbff",
+              "primary-fixed-dim": "#adc6ff",
+              "on-primary-container": "#fefcff",
+              "on-secondary-container": "#2d4c83",
+              "primary": "#0058bc",
+              "on-surface": "#191c1d",
+              "on-background": "#191c1d",
+              "surface-dim": "#d9dadb",
+              "on-primary-fixed": "#001a41",
+              "surface": "#f8f9fa",
+              "secondary": "#405e96",
+              "surface-tint": "#005bc1",
+              "surface-bright": "#f8f9fa",
+              "secondary-fixed": "#d8e2ff",
+              "on-secondary-fixed-variant": "#26467d",
+              "secondary-container": "#a1befd",
+              "on-primary": "#ffffff",
+              "surface-container": "#edeeef",
+              "on-error-container": "#93000a",
+              "background": "#f8f9fa",
+              "error": "#ba1a1a",
+              "outline": "#717786",
+              "surface-container-highest": "#e1e3e4",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#adc6ff",
+              "outline-variant": "#c1c6d7",
+              "on-tertiary-fixed-variant": "#7c2e00",
+              "surface-variant": "#e1e3e4",
+              "primary-container": "#0070eb",
+              "on-surface-variant": "#414755",
+              "error-container": "#ffdad6",
+              "surface-container-low": "#f3f4f5",
+              "tertiary": "#9e3d00",
+              "tertiary-fixed-dim": "#ffb595",
+              "on-tertiary-fixed": "#351000"
+            },
+            fontFamily: {
+              "headline": ["Lexend"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-kinetic-gradient {
+            background: linear-gradient(135deg, #0058bc 0%, #0070eb 100%);
+        }
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- TopNavBar (Shared Component) -->
+<header class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-[0_8px_24px_rgba(25,28,29,0.06)]">
+<div class="flex justify-between items-center px-6 h-16 w-full">
+<div class="font-['Lexend'] font-black tracking-tighter text-2xl text-blue-700 dark:text-blue-500">
+                KINETIC
+            </div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 hover:text-blue-600 cursor-pointer transition-colors duration-200">account_circle</span>
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 hover:text-blue-600 cursor-pointer transition-colors duration-200">settings</span>
+</div>
+</div>
+<div class="bg-slate-100 dark:bg-slate-800 h-[1px] w-full"></div>
+</header>
+<!-- SideNavBar (Shared Component - "Attendance Kiosk" Active) -->
+<nav class="fixed left-0 top-0 h-screen w-64 z-40 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl shadow-2xl dark:shadow-none flex flex-col pt-20 pb-8 px-4 h-full hidden md:flex">
+<div class="mb-8 px-2">
+<h2 class="font-['Lexend'] font-bold text-blue-700 dark:text-blue-500 text-lg uppercase tracking-wider">KINETIC PRECISION</h2>
+<p class="text-xs text-slate-500 font-semibold tracking-widest uppercase mt-1">Elite Performance</p>
+</div>
+<div class="space-y-2 flex-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all rounded-lg font-['Manrope'] font-semibold text-sm tracking-wide" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600 bg-blue-50/50 dark:bg-blue-900/20 transition-all font-['Manrope'] font-semibold text-sm tracking-wide" href="#">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+                Attendance Kiosk
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all rounded-lg font-['Manrope'] font-semibold text-sm tracking-wide" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                Reports
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all rounded-lg font-['Manrope'] font-semibold text-sm tracking-wide" href="#">
+<span class="material-symbols-outlined">badge</span>
+                Staff Management
+            </a>
+</div>
+<button class="mt-auto bg-kinetic-gradient text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 duration-150 shadow-lg shadow-blue-200">
+<span class="material-symbols-outlined">person_add</span>
+            Check In Member
+        </button>
+</nav>
+<!-- Main Canvas -->
+<main class="md:pl-64 pt-16 min-h-screen">
+<div class="p-6 md:p-10 max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="mb-10">
+<h1 class="font-headline text-4xl font-bold text-on-surface tracking-tight">Kiosko de Asistencia</h1>
+<p class="font-body text-on-surface-variant mt-2 text-lg">Por favor, selecciona tu acción e identifica tu huella.</p>
+</div>
+<!-- Bento Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Center Column: Biometric Scan -->
+<div class="lg:col-span-8 flex flex-col gap-8">
+<!-- Entry/Exit Toggle -->
+<div class="bg-surface-container-low rounded-full p-2 flex items-center shadow-sm w-full max-w-md mx-auto">
+<button class="flex-1 py-4 px-6 rounded-full font-headline font-bold text-lg bg-white text-primary shadow-lg flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined">login</span>
+                            ENTRADA
+                        </button>
+<button class="flex-1 py-4 px-6 rounded-full font-headline font-bold text-lg text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined">logout</span>
+                            SALIDA
+                        </button>
+</div>
+<!-- Main Scan Interface -->
+<div class="bg-surface-container-lowest rounded-[2rem] p-12 flex flex-col items-center justify-center relative overflow-hidden shadow-[0_8px_24px_rgba(25,28,29,0.06)] group">
+<!-- Abstract Background Detail -->
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/5 rounded-full blur-3xl"></div>
+<div class="relative z-10 text-center">
+<div class="mb-8 relative inline-block">
+<!-- Ring Animation Placeholder -->
+<div class="absolute -inset-8 rounded-full border-2 border-primary/20 animate-pulse"></div>
+<div class="absolute -inset-14 rounded-full border border-primary/10"></div>
+<div class="w-48 h-48 bg-surface-container-low rounded-full flex items-center justify-center text-primary relative z-20 group-hover:scale-105 transition-transform duration-500">
+<span class="material-symbols-outlined !text-8xl" style="font-variation-settings: 'wght' 200;">fingerprint</span>
+</div>
+</div>
+<h3 class="font-headline text-2xl font-bold text-on-surface mb-2">Esperando Escaneo...</h3>
+<p class="font-body text-on-surface-variant">Coloque su dedo firmemente en el lector biométrico</p>
+<div class="mt-8 flex items-center justify-center gap-2 py-2 px-6 bg-primary/10 text-primary rounded-full font-bold text-sm tracking-widest uppercase">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+                                Sensor Activo
+                            </div>
+</div>
+</div>
+<!-- Statistics / Quick Feedback -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/20">
+<p class="font-label text-xs text-on-surface-variant mb-1">MIEMBROS HOY</p>
+<p class="font-headline text-3xl font-bold text-on-surface">142</p>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/20">
+<p class="font-label text-xs text-on-surface-variant mb-1">HORA ACTUAL</p>
+<p class="font-headline text-3xl font-bold text-primary" id="current-time">09:42</p>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/20">
+<p class="font-label text-xs text-on-surface-variant mb-1">OCUPACIÓN</p>
+<p class="font-headline text-3xl font-bold text-on-surface">68%</p>
+</div>
+</div>
+</div>
+<!-- Right Column: Recent Activity -->
+<div class="lg:col-span-4 space-y-6">
+<div class="bg-surface-container-low rounded-[1.5rem] p-6 flex flex-col h-full">
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline text-xl font-bold">Actividad Reciente</h2>
+<span class="material-symbols-outlined text-primary cursor-pointer">history</span>
+</div>
+<div class="space-y-4">
+<!-- Activity Item 1 -->
+<div class="bg-white p-4 rounded-xl flex items-center gap-4 shadow-sm group hover:translate-x-1 transition-all duration-200">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="portrait of a young athletic woman with a confident expression, natural lighting, studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3eqNcGVn_I8_5LTtRIhtxNe6XxLpzMm2ahWEeWK2YsBl_ewVNn5lpVm4GbXrm4-diD-K5ueip3ki_n5rdspzIg4m4mDzNINcgHfRnieUTlD_xavvKYi3SOS4GjnMUkL5_tp43BeiWbpd7hGKFQrNxnBk_me9jSW8F89YXK73imu9wJ784fIp4orMur9ysGKISZluPQwPogeQa7fV5MM0JkrToQMv6cfa00olcxobAscgSreb6WAi_MFSIhL8B97RYwAHVotm6AqzF"/>
+<div class="flex-1">
+<h4 class="font-body font-bold text-sm text-on-surface">Elena Rodriguez</h4>
+<p class="font-body text-xs text-on-surface-variant">Entrada confirmada</p>
+</div>
+<div class="text-right">
+<p class="font-headline text-sm font-bold text-primary">09:40</p>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">Hace 2m</p>
+</div>
+</div>
+<!-- Activity Item 2 -->
+<div class="bg-white p-4 rounded-xl flex items-center gap-4 shadow-sm group hover:translate-x-1 transition-all duration-200">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="portrait of a bearded man in gym attire, sweating slightly, high contrast photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxqgsyc7IQ7uvZKdKGo9d2WqUIZm8xs1CVsCkxghgDaaKnhbqBX0Hy3lkB-ZEI8LCvlRXLwAR__ZoTpdNJmBDhGOL59Czd85Rm8586xK5VV3v4MErQScarNzw5HQTpOOGC9yPea4fqwGnilRlppHfFSgEHNoMZz2j66M8MvWhdpgbEeL0ZCnbKXB1sKHM3zPhJPIjKPeF-JNmUdtzwjZOIIWeO66V4yT3QZhmC0OkjbCTUgJhWRcg7tUsOvhQuHjICeR-H2PvtWCTc"/>
+<div class="flex-1">
+<h4 class="font-body font-bold text-sm text-on-surface">Marcus Thorne</h4>
+<p class="font-body text-xs text-on-surface-variant">Salida registrada</p>
+</div>
+<div class="text-right">
+<p class="font-headline text-sm font-bold text-on-surface">09:35</p>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">Hace 7m</p>
+</div>
+</div>
+<!-- Activity Item 3 -->
+<div class="bg-white p-4 rounded-xl flex items-center gap-4 shadow-sm group hover:translate-x-1 transition-all duration-200">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="headshot of a smiling professional trainer, soft morning sunlight, blurred outdoor park background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHhU8t0eNMpi6s2ZaBUpo1HMQa6dK9bHV__BDUEmfc7hrmuv1E7JQDeVGSAuzNvLqg1NMtyE6A8HazsjaGGjvor2t2YhsnoUhCbEBX5ZiG_yCMI_muRqbYqXHkIa8sRVjexcf1EaSiNAQ8QhsPobtP09oOyLFK_FfnmqLzSaXSI28J0TbccChPePTjpXUBTRKZeXMdlH8OyyskJR54QATxWTQjMo_Jk5cx3oQT602y1dOKOuBVe6itsu9oxauA4oGu_gXyxW4KjbmV"/>
+<div class="flex-1">
+<h4 class="font-body font-bold text-sm text-on-surface">Sofia Chen</h4>
+<p class="font-body text-xs text-on-surface-variant">Entrada confirmada</p>
+</div>
+<div class="text-right">
+<p class="font-headline text-sm font-bold text-primary">09:12</p>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">Hace 30m</p>
+</div>
+</div>
+<!-- Activity Item 4 -->
+<div class="bg-white p-4 rounded-xl flex items-center gap-4 shadow-sm group hover:translate-x-1 transition-all duration-200">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div class="flex-1">
+<h4 class="font-body font-bold text-sm text-on-surface">Victor Hugo</h4>
+<p class="font-body text-xs text-on-surface-variant">Entrada confirmada</p>
+</div>
+<div class="text-right">
+<p class="font-headline text-sm font-bold text-primary">08:55</p>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">Hace 47m</p>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-6">
+<div class="p-6 bg-kinetic-gradient rounded-2xl text-white">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="font-headline font-bold text-sm">Consejo Kinetic</p>
+</div>
+<p class="text-xs opacity-90 leading-relaxed">Mantén tu huella centrada para un escaneo 20% más rápido. La precisión es nuestra prioridad.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Nav for Mobile -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md shadow-[0_-8px_24px_rgba(25,28,29,0.06)] flex justify-around items-center py-3 z-50">
+<button class="flex flex-col items-center gap-1 text-slate-500">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-bold">Inicio</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">qr_code_scanner</span>
+<span class="text-[10px] font-bold">Kiosko</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-500">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-bold">Reportes</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-500">
+<span class="material-symbols-outlined">badge</span>
+<span class="text-[10px] font-bold">Staff</span>
+</button>
+</nav>
+</body></html>

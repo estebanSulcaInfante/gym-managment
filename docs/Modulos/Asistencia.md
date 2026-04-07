@@ -25,15 +25,17 @@ Control de asistencia del personal: registro de entradas y salidas diarias.
 
 ## Componentes UI
 
-- [ ] Vista diaria de asistencia
-- [ ] Botón de marcar entrada/salida
-- [ ] Reporte/resumen semanal o mensual
+- [ ] Kiosko: input DNI y captura de webcam
+- [ ] Feed en tiempo real de entradas/salidas
+- [ ] Vista diaria de asistencia (Admin)
+- [ ] Reportes con análisis de puntualidad
 
 ## Reglas de Negocio
 
 - Solo empleados activos pueden registrar asistencia
-- Una entrada por día por empleado
-- La salida solo se registra si existe una entrada previa
+- El Kiosko usa DNI manual + foto automática usando la webcam
+- La puntualidad (estado) se evalúa contra el `Horario` del empleado
+- Se requiere entrada previa para registrar la salida
 
 ## Dependencias
 

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KINETIC - Gestión de Staff</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary": "#ffffff",
+              "surface-container-high": "#e7e8e9",
+              "primary-fixed": "#d8e2ff",
+              "on-secondary-fixed": "#001a41",
+              "inverse-on-surface": "#f0f1f2",
+              "on-secondary": "#ffffff",
+              "tertiary-fixed": "#ffdbcc",
+              "inverse-primary": "#adc6ff",
+              "tertiary-container": "#c64f00",
+              "inverse-surface": "#2e3132",
+              "on-error": "#ffffff",
+              "on-primary-fixed-variant": "#004493",
+              "on-tertiary-container": "#fffbff",
+              "primary-fixed-dim": "#adc6ff",
+              "on-primary-container": "#fefcff",
+              "on-secondary-container": "#2d4c83",
+              "primary": "#0058bc",
+              "on-surface": "#191c1d",
+              "on-background": "#191c1d",
+              "surface-dim": "#d9dadb",
+              "on-primary-fixed": "#001a41",
+              "surface": "#f8f9fa",
+              "secondary": "#405e96",
+              "surface-tint": "#005bc1",
+              "surface-bright": "#f8f9fa",
+              "secondary-fixed": "#d8e2ff",
+              "on-secondary-fixed-variant": "#26467d",
+              "secondary-container": "#a1befd",
+              "on-primary": "#ffffff",
+              "surface-container": "#edeeef",
+              "on-error-container": "#93000a",
+              "background": "#f8f9fa",
+              "error": "#ba1a1a",
+              "outline": "#717786",
+              "surface-container-highest": "#e1e3e4",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#adc6ff",
+              "outline-variant": "#c1c6d7",
+              "on-tertiary-fixed-variant": "#7c2e00",
+              "surface-variant": "#e1e3e4",
+              "primary-container": "#0070eb",
+              "on-surface-variant": "#414755",
+              "error-container": "#ffdad6",
+              "surface-container-low": "#f3f4f5",
+              "tertiary": "#9e3d00",
+              "tertiary-fixed-dim": "#ffb595",
+              "on-tertiary-fixed": "#351000"
+            },
+            fontFamily: {
+              "headline": ["Lexend"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-nav {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+      }
+      .kinetic-gradient {
+        background: linear-gradient(135deg, #0058bc 0%, #0070eb 100%);
+      }
+      .cloud-shadow {
+        box-shadow: 0 8px 24px rgba(25, 28, 29, 0.06);
+      }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- SideNavBar Shell -->
+<nav class="fixed left-0 top-0 h-screen w-64 z-40 bg-white/85 backdrop-blur-xl flex flex-col pt-20 pb-8 px-4 h-full shadow-2xl">
+<div class="mb-10 px-4">
+<h1 class="font-headline font-bold text-blue-700 tracking-tight text-xl">KINETIC PRECISION</h1>
+<p class="font-body font-semibold text-sm tracking-wide text-slate-500 uppercase">Elite Performance</p>
+</div>
+<div class="flex flex-col gap-1 grow">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-all active:translate-x-1 duration-150 font-semibold text-sm tracking-wide" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-all active:translate-x-1 duration-150 font-semibold text-sm tracking-wide" href="#">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+                Attendance Kiosk
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-all active:translate-x-1 duration-150 font-semibold text-sm tracking-wide" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                Reports
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-blue-700 border-l-4 border-blue-600 bg-blue-50/50 transition-all active:translate-x-1 duration-150 font-semibold text-sm tracking-wide" href="#">
+<span class="material-symbols-outlined">badge</span>
+                Staff Management
+            </a>
+</div>
+<div class="mt-auto border-t border-outline-variant/20 pt-6 px-4">
+<div class="flex items-center gap-3 mb-6">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="Professional headshot of a gym manager in business attire with a confident expression and neutral office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCc-pwD3Ivx8mZc8X36qPJMzg5ySc6tfMHlGz_Y58gyn5S1Olw3LyK7z7y_NqgRNvdam76d-UpH3i6ZRqU3Qx0iihRTREzMHOikMtdE2g26wTyf4yQy0YyDTeObsGbCentEYIlKW35RqPm86XZF5i0-ToRPm5BtugdFE9J1sH-4dCG_HluBTg62rxmXAy4hdzpY-MOpuHwyNfEmFpN1t-2dYDbzB_93-_KeHmsAbOswmctGPEDBwRj88cKYepY9yL9FI4u3m5ngVSVC"/>
+<div>
+<p class="text-xs font-bold font-headline">Gym Manager</p>
+<p class="text-[10px] text-slate-500">Elite Performance</p>
+</div>
+</div>
+<button class="w-full kinetic-gradient text-white py-3 rounded-lg font-headline font-bold text-sm shadow-lg active:scale-95 transition-transform">
+                Check In Member
+            </button>
+</div>
+</nav>
+<!-- TopNavBar Shell -->
+<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md flex justify-between items-center px-6 h-16 w-full shadow-[0_8px_24px_rgba(25,28,29,0.06)]">
+<div class="flex items-center gap-4 ml-64">
+<span class="font-headline font-black tracking-tighter text-2xl text-blue-700">KINETIC</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex gap-8">
+<a class="text-slate-500 font-medium hover:text-blue-600 transition-colors text-sm" href="#">Empresa</a>
+<a class="text-slate-500 font-medium hover:text-blue-600 transition-colors text-sm" href="#">Instalaciones</a>
+<a class="text-blue-700 font-bold hover:text-blue-600 transition-colors text-sm" href="#">Equipo</a>
+</div>
+<div class="flex items-center gap-4 text-slate-500">
+<span class="material-symbols-outlined cursor-pointer hover:text-blue-600 transition-colors">account_circle</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-blue-600 transition-colors">settings</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 px-8 pb-12">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-10">
+<div>
+<span class="font-label text-xs font-bold text-primary tracking-widest uppercase mb-2 block">Administración Central</span>
+<h2 class="font-headline text-4xl font-bold text-on-surface">Gestión de Staff</h2>
+</div>
+<button class="kinetic-gradient text-on-primary px-8 py-3 rounded-lg font-headline font-bold flex items-center gap-2 cloud-shadow active:scale-95 transition-all">
+<span class="material-symbols-outlined">person_add</span>
+                Agregar Nuevo Staff
+            </button>
+</div>
+<!-- Bento Summary Cards -->
+<div class="grid grid-cols-12 gap-6 mb-10">
+<div class="col-span-4 bg-surface-container-lowest p-6 rounded-xl cloud-shadow">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-blue-50 text-primary rounded-lg">
+<span class="material-symbols-outlined">assignment_turned_in</span>
+</span>
+<span class="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">+2.4%</span>
+</div>
+<p class="font-label text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enrollment Completion</p>
+<div class="flex items-baseline gap-2 mt-1">
+<h3 class="font-headline text-3xl font-bold text-on-surface">94.2%</h3>
+<span class="text-sm font-medium text-slate-500">de la meta</span>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-4">
+<div class="bg-primary h-1.5 rounded-full" style="width: 94.2%"></div>
+</div>
+</div>
+<div class="col-span-4 bg-surface-container-lowest p-6 rounded-xl cloud-shadow">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-blue-50 text-primary rounded-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">potted_plant</span>
+</span>
+<span class="flex h-2 w-2 rounded-full bg-green-500 animate-pulse mt-3 mr-1"></span>
+</div>
+<p class="font-label text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Now</p>
+<div class="flex items-baseline gap-2 mt-1">
+<h3 class="font-headline text-3xl font-bold text-on-surface">28</h3>
+<span class="text-sm font-medium text-slate-500">Staff en turno</span>
+</div>
+<div class="flex -space-x-2 mt-4">
+<img class="w-8 h-8 rounded-full border-2 border-white object-cover" data-alt="Portrait of a diverse female staff member smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTpZXIzwLiXPjCgdUCP4e09hTXaMrT8Otm1nZc6MPaQUVtdbvBq4VsubnxFLwwR3RIApLaF0FTkoLsWWVoHZu2JMBLoVeTJ55R8bMtCZ4Qa0t142f8T2yvdxzmkEq88OTsGKeFIhgY_guXmc0rUezwiK3Rzu6acXxIKt3FUmNtHatI_WJWXcACANicok98c5avoj_V2ndixBNvOfJyltXUmGGhGsdHLEag-N_kZBt_L5jYTjMwACNOjB-DT7emhTITznxihzSqYpQj"/>
+<img class="w-8 h-8 rounded-full border-2 border-white object-cover" data-alt="Portrait of a young male athletic trainer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_glRbA8vJVekBRya37fcOQOCeW_-9ZxyaM7-NCpdI5kpa9lOeLP4FQNp_Au1nNcw5oB8lOOLFof01RNpuVllZyvzdSe74vW71I46g6s_bgM4xTA2n2nqUhRRyzzwLye-L7uzcInS8QAlP-4ZuLhy89VaHBTM-oTCmGm5PsAdlgs_vv0-lEyBBCkjHl2Kb_FH9_ca663Tz4GbVQGgnDpv-WzSiW0v2toJIMF7E95TW6rIlyUJa9cOBm4A9qO9qm-E8fVroKojcyCdc"/>
+<img class="w-8 h-8 rounded-full border-2 border-white object-cover" data-alt="Close up portrait of a professional female fitness coach" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnbssSUOQT43Oog2bBU2yZYvjD8Z-WV1PV10yN9nROOPiQvN5VWB6_ewewpu4_AhSRj7wPVy25eQQEAM__gARCoF4qmKIS7HNC7pb06CQviZFusZUxnxgNk7mHqgEjBka0WbL0GSvyoFpqeKESGKgNIFkpw_J4U1sEAslZY-a1xLJM4PZnb7diKoxPceEiqaiL4hkNflx1g8YkgAFdgVe1r2HhI8VBa-ToVUMu8WMjqk4Kfpzj6rZEPa67JyKLBHviuJsSX1gDgTzt"/>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">+25</div>
+</div>
+</div>
+<div class="col-span-4 bg-surface-container-lowest p-6 rounded-xl cloud-shadow border-l-4 border-tertiary">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-orange-50 text-tertiary rounded-lg">
+<span class="material-symbols-outlined">work_outline</span>
+</span>
+</div>
+<p class="font-label text-[10px] font-bold text-slate-400 uppercase tracking-widest">Open Roles</p>
+<div class="flex items-baseline gap-2 mt-1">
+<h3 class="font-headline text-3xl font-bold text-on-surface">04</h3>
+<span class="text-sm font-medium text-slate-500">Vacantes activas</span>
+</div>
+<div class="mt-4 flex gap-2">
+<span class="text-[10px] px-2 py-1 bg-surface-container-low rounded-md font-bold text-on-surface-variant">COACH PT</span>
+<span class="text-[10px] px-2 py-1 bg-surface-container-low rounded-md font-bold text-on-surface-variant">OPS LEAD</span>
+</div>
+</div>
+</div>
+<!-- Staff Directory Section -->
+<div class="bg-surface-container-lowest rounded-xl cloud-shadow overflow-hidden">
+<!-- Search and Filter Bar -->
+<div class="px-6 py-6 flex flex-wrap items-center justify-between gap-4">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-lg text-sm focus:ring-2 focus:ring-primary focus:bg-white transition-all" placeholder="Buscar por nombre, cargo o ID..." type="text"/>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-low text-slate-600 rounded-lg text-sm font-bold hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-lg">filter_list</span>
+                        Filtros
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-low text-slate-600 rounded-lg text-sm font-bold hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-lg">download</span>
+                        Exportar
+                    </button>
+</div>
+</div>
+<!-- Directory Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-6 py-4 font-label text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Empleado</th>
+<th class="px-6 py-4 font-label text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Cargo</th>
+<th class="px-6 py-4 font-label text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Estado Biométrico</th>
+<th class="px-6 py-4 font-label text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Turno Actual</th>
+<th class="px-6 py-4 font-label text-[10px] font-extrabold text-slate-500 uppercase tracking-widest text-right">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<!-- Row 1 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of a smiling male staff member with a modern haircut" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMSV7R7lRehJOOkW5xFPaVLhaKNRGCZ3HF2P74Tf27tHZHQPxzjjrUEbFoLZa1mCH7SR1j81wbVzfISC2eYta8UuZ1pgE7rCZbc1N28wEoxAR14EObfXYfySYuVAlcc_rWpXNCw8QI7dH_HcTHvgoWJEnIxl2fAHZPpaXXbVDkUBp73KWIQsQggVqfYpFilQT7bngILbLwayGUo_DGCFiF5desmJgUe8ZP8qRm9SsvVpQ7dlge-1BGiiZnrmJfl_Vpg8u0HrwuCyRr"/>
+<div>
+<p class="font-headline text-sm font-bold">Carlos Mendoza</p>
+<p class="font-body text-xs text-slate-400">ID: #KP-9022</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-sm font-semibold text-slate-600">Senior Coach</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-xs font-bold text-slate-700">Verificado</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-xs font-medium px-3 py-1 bg-blue-50 text-primary rounded-full">Turno Mañana</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">visibility</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of a professional female staff member with glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfXe1jeuNRKuiOujIUG73xZ7OnrSUMFxud1930OLp2HEq-qSzPJGRboUeBJvvm-K2krln0m9a-mUUnQv-ajcjWtRSzDLthJAHcSxHUdxnmTiDM_JxWUFKhuDJHHSqu7fK4i_54EaEwp1wDTPaTzE9-iAEzGxfZgPwLG04rvw8GNSpyYbvbPTk0XT96SdHjvLnyZFcnHizcJgEkcXG2p21hbF8Kcwf8--qRUTNGDdFPvRsjX-9bfsO4UFPU7k7myaELD4Pq1Pg3j4rI"/>
+<div>
+<p class="font-headline text-sm font-bold">Elena Rodriguez</p>
+<p class="font-body text-xs text-slate-400">ID: #KP-8814</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-sm font-semibold text-slate-600">Recepción</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-xs font-bold text-slate-700">Verificado</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-xs font-medium px-3 py-1 bg-green-50 text-green-700 rounded-full">Activo</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">visibility</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of a focused male gym instructor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQSUozjhb4S86m4DgOp3zdU02nG7b2cP7Da8WGbwL-Bmac5A4pZDWElaLWPPM6mfofPA3_jSV7FaZmTqSWAf-Lkl6Qj8U_kfZInb87_bcm34JPFb2CsDaA51KK6BP8_3Q52XqwJocW3zTe9jJuuHZ_JOGM413uq4iJICrLUHpVT8EbYk1A_v8tmv_PvpcyICsgC6UtzkzOzW4viPDv8x0AfdNZ2vmIHeGBnXtoDx6Z9v3-GVHbdGqlc2HucD270g4Td6jKm1qcI-lo"/>
+<div>
+<p class="font-headline text-sm font-bold">Marco Valiente</p>
+<p class="font-body text-xs text-slate-400">ID: #KP-9105</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-sm font-semibold text-slate-600">Personal Trainer</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2 text-tertiary">
+<span class="material-symbols-outlined text-sm">pending</span>
+<span class="text-xs font-bold">Pendiente</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-xs font-medium px-3 py-1 bg-slate-100 text-slate-500 rounded-full">Fuera de turno</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">visibility</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of a young female fitness professional" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjhnrYA6jCWU25Ba5wm0gX7-rAmqqbd14qEwzOkuPgNIlgKmb5sLyCScBBS3zEW25e3MwOhzCtpQxOiLwqolB-Mq7NKK70V-AyiIpS6tyTlmtuc4NjEBUYpfHXmdisZ3o-pENu6oLwsMUXBzKvspciHxJonu6kobhA4PXjRNXhVST3Z0X8OpXX0Rt8QmRf84Dv9E9g5FVXVdS-QhDUiDMExVz-V4aravOX66QF-qidBDQklU9azJ1hHrJ5S4S3qfHqTbVLviFrNOPb"/>
+<div>
+<p class="font-headline text-sm font-bold">Sofía Lagos</p>
+<p class="font-body text-xs text-slate-400">ID: #KP-9331</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-sm font-semibold text-slate-600">Yoga Instructor</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2 text-green-500">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-xs font-bold text-slate-700">Verificado</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-xs font-medium px-3 py-1 bg-orange-50 text-orange-600 rounded-full">Turno Tarde</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">visibility</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 bg-surface-container-low flex items-center justify-between">
+<span class="text-xs text-slate-500 font-medium">Mostrando 4 de 124 empleados</span>
+<div class="flex gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-slate-400">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-xs font-bold text-slate-600">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-xs font-bold text-slate-600">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-slate-400">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

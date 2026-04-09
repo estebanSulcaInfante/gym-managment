@@ -1,15 +1,26 @@
 from flask import Blueprint, request, jsonify
 from app.models import Empleado, Horario
 from app import db
+from app.decorators import login_required, admin_required
 
 bp = Blueprint('empleados', __name__, url_prefix='/api/empleados')
 
+from datetime import datetime
+from sqlalchemy.orm import joinedload
+
 @bp.route('', methods=['GET'])
+@login_required
 def list_empleados():
-    empleados = Empleado.query.all()
-    return jsonify([emp.to_dict() for emp in empleados]), 200
+    empleados = Empleado.query.options(joinedload(Empleado.horarios)).all()
+    res = []
+    for emp in empleados:
+        d = emp.to_dict()
+        d['horarios'] = [h.to_dict() for h in emp.horarios]
+        res.append(d)
+    return jsonify(res), 200
 
 @bp.route('/<int:id>', methods=['GET'])
+@login_required
 def get_empleado(id):
     emp = Empleado.query.get_or_404(id)
     data = emp.to_dict()
@@ -17,6 +28,7 @@ def get_empleado(id):
     return jsonify(data), 200
 
 @bp.route('', methods=['POST'])
+@admin_required
 def create_empleado():
     data = request.json
     if not data or not 'dni' in data or not 'nombre' in data:
@@ -35,10 +47,25 @@ def create_empleado():
         foto_url=data.get('foto_url')
     )
     db.session.add(emp)
+    db.session.flush() # Para tener el id
+
+    if 'horarios' in data and isinstance(data['horarios'], list):
+        for h_data in data['horarios']:
+            h = Horario(
+                empleado_id=emp.id,
+                dia_semana=h_data['dia_semana'],
+                hora_entrada=datetime.strptime(h_data['hora_entrada'], '%H:%M').time() if h_data.get('hora_entrada') else None,
+                hora_salida=datetime.strptime(h_data['hora_salida'], '%H:%M').time() if h_data.get('hora_salida') else None
+            )
+            db.session.add(h)
+
     db.session.commit()
-    return jsonify(emp.to_dict()), 201
+    res = emp.to_dict()
+    res['horarios'] = [h.to_dict() for h in emp.horarios]
+    return jsonify(res), 201
 
 @bp.route('/<int:id>', methods=['PUT'])
+@admin_required
 def update_empleado(id):
     emp = Empleado.query.get_or_404(id)
     data = request.json
@@ -51,10 +78,25 @@ def update_empleado(id):
     if 'foto_url' in data: emp.foto_url = data['foto_url']
     if 'activo' in data: emp.activo = data['activo']
     
+    if 'horarios' in data and isinstance(data['horarios'], list):
+        # Borrar horarios viejos y recrear
+        Horario.query.filter_by(empleado_id=emp.id).delete()
+        for h_data in data['horarios']:
+            h = Horario(
+                empleado_id=emp.id,
+                dia_semana=h_data['dia_semana'],
+                hora_entrada=datetime.strptime(h_data['hora_entrada'], '%H:%M:%S').time() if len(h_data.get('hora_entrada','')) > 5 else (datetime.strptime(h_data['hora_entrada'], '%H:%M').time() if h_data.get('hora_entrada') else None),
+                hora_salida=datetime.strptime(h_data['hora_salida'], '%H:%M:%S').time() if len(h_data.get('hora_salida','')) > 5 else (datetime.strptime(h_data['hora_salida'], '%H:%M').time() if h_data.get('hora_salida') else None)
+            )
+            db.session.add(h)
+
     db.session.commit()
-    return jsonify(emp.to_dict()), 200
+    res = emp.to_dict()
+    res['horarios'] = [h.to_dict() for h in emp.horarios]
+    return jsonify(res), 200
 
 @bp.route('/<int:id>', methods=['DELETE'])
+@admin_required
 def deactivate_empleado(id):
     emp = Empleado.query.get_or_404(id)
     emp.activo = False

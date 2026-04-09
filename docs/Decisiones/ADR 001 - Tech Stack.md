@@ -5,38 +5,29 @@ tags: [decision, adr]
 # ADR 001: Tech Stack
 
 **Fecha**: 2025-04-01
-**Estado**: Aceptada
+**Estado**: Superado (Migración a Supabase completa)
 
 ## Contexto
 
-Se necesita un sistema de gestión para un gimnasio emergente. El primer módulo será empleados y asistencia. Se requiere un stack que permita desarrollo rápido, sea fácil de desplegar, y pueda crecer con el negocio.
+Se necesita un sistema de gestión para un gimnasio emergente. El primer módulo será empleados y asistencia. Se requiere un stack que permita desarrollo rápido, sea fácil de desplegar, y pueda crecer con el negocio. Posteriormente se decidió migrar a la nube para facilitar el acceso remoto y mejorar el rendimiento de consultas complejas.
 
 ## Opciones Evaluadas
 
-### Opción A: Flask + React + Tailwind + SQLite
-- ✅ API separada permite agregar mobile en el futuro
-- ✅ React ofrece interactividad completa para dashboards
-- ✅ Tailwind + componentes pre-hechos aceleran el desarrollo
-- ✅ SQLite simplifica deployment (zero-config, un archivo)
-- ❌ Más setup inicial (dos proyectos separados)
+### Opción A: Flask + React + Tailwind + SQLite (Original)
+- ✅ Rápido de prototipar
+- ❌ Limitaciones de concurrencia y acceso remoto compartido
 
-### Opción B: Flask + Jinja2 + HTMX + Tailwind
-- ✅ Un solo proyecto, más simple de arrancar
-- ✅ Server-side rendering, menos JavaScript
-- ❌ Menos flexible para UIs complejas
-- ❌ Más difícil agregar mobile después
-
-### Opción C: Astro
-- ✅ Rápido para sitios de contenido
-- ❌ No diseñado para apps CRUD interactivas
-- ❌ Islands architecture no ideal para dashboards
+### Opción B: PostgreSQL (Supabase) + JWT (Actualizada)
+- ✅ Escalabilidad para producción
+- ✅ Acceso remoto centralizado
+- ✅ Seguridad stateless con JWT para la SPA
 
 ## Decisión
 
-**Flask + React + Tailwind + SQLite**. Es el stack más adecuado para un sistema de gestión interactivo que necesita CRUD, dashboards y reportes. La separación API/Frontend permite escalar y agregar clientes mobile en el futuro.
+**Flask + React + Tailwind + PostgreSQL (Supabase)**. Mantuvimos el core de React/Flask pero migramos la persistencia a **Supabase** para robustez. Implementamos **JWT** como estándar de seguridad para desacoplar la autenticación y facilitar futuras integraciones mobile.
 
 ## Consecuencias
 
-- Se mantienen dos proyectos (backend/ y frontend/)
-- SQLite es suficiente para un gimnasio emergente, migrar a PostgreSQL si crece
-- Se necesita CORS configurado entre Flask y React en desarrollo
+- Se utilizan variables de entorno para la conexión segura a la DB.
+- Mayor latencia en desarrollo (compensada con técnicas de *Eager Loading* en el backend).
+- Sesiones gestionadas por el Frontend mediante tokens, eliminando el estado en servidor.

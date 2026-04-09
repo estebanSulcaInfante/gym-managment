@@ -1,8 +1,17 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
-import StaffManagement from './pages/StaffManagement';
+
+// Pages
+import Login from './pages/Login';
 import Kiosk from './pages/Kiosk';
+import Dashboard from './pages/Dashboard';
+import Reports from './pages/Reports';
+import Calendar from './pages/Calendar';
+import StaffManagement from './pages/StaffManagement';
+import EmployeeDetail from './pages/EmployeeDetail';
 
 function Layout({ children }) {
   return (
@@ -16,21 +25,51 @@ function Layout({ children }) {
   );
 }
 
-function DashboardPlaceholder() { return <div className="p-8"><h1 className="text-4xl font-headline font-bold">Dashboard</h1></div>; }
-function KioskPlaceholder() { return <div className="p-8"><h1 className="text-4xl font-headline font-bold">Kiosko de Asistencia</h1></div>; }
-function ReportsPlaceholder() { return <div className="p-8"><h1 className="text-4xl font-headline font-bold">Reportes</h1></div>; }
-
 function App() {
   return (
-    <Layout>
+    <AuthProvider>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPlaceholder />} />
+        {/* Public routes — no layout, no auth */}
+        <Route path="/login" element={<Login />} />
         <Route path="/kiosk" element={<Kiosk />} />
-        <Route path="/reports" element={<ReportsPlaceholder />} />
-        <Route path="/staff" element={<StaffManagement />} />
+
+        {/* Protected routes — inside layout */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Layout><Dashboard /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/reports" element={
+          <ProtectedRoute>
+            <Layout><Reports /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/calendar" element={
+          <ProtectedRoute>
+            <Layout><Calendar /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/staff" element={
+          <ProtectedRoute adminOnly>
+            <Layout><StaffManagement /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/staff/:id" element={
+          <ProtectedRoute>
+            <Layout><EmployeeDetail /></Layout>
+          </ProtectedRoute>
+        } />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
-    </Layout>
+    </AuthProvider>
   );
 }
 

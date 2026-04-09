@@ -1,45 +1,101 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import clsx from 'clsx';
 
+const sections = [
+  {
+    label: 'OVERVIEW',
+    items: [
+      { name: 'Dashboard', to: '/dashboard', icon: 'space_dashboard' },
+    ]
+  },
+  {
+    label: 'ASISTENCIA',
+    items: [
+      { name: 'Calendario', to: '/calendar', icon: 'calendar_month' },
+      { name: 'Reportes', to: '/reports', icon: 'analytics' },
+    ]
+  },
+  {
+    label: 'EQUIPO',
+    adminOnly: true,
+    items: [
+      { name: 'Staff', to: '/staff', icon: 'badge' },
+    ]
+  },
+];
+
 export default function Sidebar() {
-  const links = [
-    { name: 'Dashboard', to: '/dashboard', icon: 'dashboard' },
-    { name: 'Attendance Kiosk', to: '/kiosk', icon: 'qr_code_scanner' },
-    { name: 'Reports', to: '/reports', icon: 'analytics' },
-    { name: 'Staff Management', to: '/staff', icon: 'badge' },
-  ];
+  const { user, logout, isAdmin } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <nav className="fixed left-0 top-0 h-screen w-64 z-40 bg-white/85 backdrop-blur-xl shadow-2xl flex flex-col pt-20 pb-8 px-4 hidden md:flex">
+      {/* Branding */}
       <div className="mb-8 px-2">
         <h2 className="font-headline font-bold text-blue-700 text-lg uppercase tracking-wider">KINETIC PRECISION</h2>
         <p className="text-xs text-slate-500 font-semibold tracking-widest uppercase mt-1">Elite Performance</p>
       </div>
 
-      <div className="space-y-2 flex-1">
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              clsx(
-                "flex items-center gap-3 px-4 py-3 transition-all rounded-lg font-body font-semibold text-sm tracking-wide",
-                isActive
-                  ? "text-blue-700 border-l-4 border-blue-600 bg-blue-50/50"
-                  : "text-slate-600 hover:bg-slate-50"
-              )
-            }
-          >
-            <span className="material-symbols-outlined">{link.icon}</span>
-            {link.name}
-          </NavLink>
+      {/* Nav Sections */}
+      <div className="flex-1 space-y-6 overflow-y-auto">
+        {sections
+          .filter(section => !section.adminOnly || isAdmin)
+          .map(section => (
+          <div key={section.label}>
+            <p className="px-4 mb-2 text-[9px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">
+              {section.label}
+            </p>
+            <div className="space-y-1">
+              {section.items.map(link => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  className={({ isActive }) =>
+                    clsx(
+                      "flex items-center gap-3 px-4 py-2.5 transition-all rounded-lg font-body font-semibold text-sm tracking-wide",
+                      isActive
+                        ? "text-blue-700 bg-blue-50/60 border-l-[3px] border-blue-600"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 border-l-[3px] border-transparent"
+                    )
+                  }
+                >
+                  <span className="material-symbols-outlined text-[20px]">{link.icon}</span>
+                  {link.name}
+                </NavLink>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
-      <button className="mt-auto bg-kinetic-gradient text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 duration-150 shadow-lg shadow-blue-200">
-        <span className="material-symbols-outlined">person_add</span>
-        Check In Member
-      </button>
+      {/* User Info + Logout */}
+      {user && (
+        <div className="mt-auto border-t border-slate-200 pt-4 space-y-3">
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white text-sm font-bold uppercase">
+              {user.username?.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-slate-700 truncate">{user.username}</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">{user.rol}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 text-sm text-slate-500 hover:text-error hover:bg-red-50 py-2 rounded-lg transition-all font-semibold"
+          >
+            <span className="material-symbols-outlined text-lg">logout</span>
+            Cerrar Sesión
+          </button>
+        </div>
+      )}
     </nav>
   );
 }
+

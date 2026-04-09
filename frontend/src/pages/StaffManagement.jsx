@@ -1,19 +1,67 @@
 import React, { useEffect, useState } from 'react';
-import { getEmpleados } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import { getEmpleados, createEmpleado, updateEmpleado, deactivateEmpleado } from '../services/api';
 import clsx from 'clsx';
+import EmployeeModal from '../components/EmployeeModal';
+
 
 export default function StaffManagement() {
   const [empleados, setEmpleados] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
+  const fetchEmpleados = () => {
+    setLoading(true);
     getEmpleados()
       .then(data => {
         setEmpleados(data);
         setLoading(false);
       })
       .catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchEmpleados();
   }, []);
+
+  const handleOpenCreate = () => {
+    setSelectedEmployee(null);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedEmployee(null);
+  };
+
+  const handleModalSubmit = (formData) => {
+    if (selectedEmployee) {
+      updateEmpleado(selectedEmployee.id, formData)
+        .then(() => {
+          fetchEmpleados();
+          handleCloseModal();
+        })
+        .catch(err => alert(err.response?.data?.error || 'Error al actualizar empleado'));
+    } else {
+      createEmpleado(formData)
+        .then(() => {
+          fetchEmpleados();
+          handleCloseModal();
+        })
+        .catch(err => alert(err.response?.data?.error || 'Error creando empleado'));
+    }
+  };
+
+  const handleDeactivate = (id) => {
+    if (confirm("Are you sure you want to deactivate this employee?")) {
+      deactivateEmpleado(id)
+        .then(() => fetchEmpleados())
+        .catch(console.error);
+    }
+  };
+
 
   return (
     <div className="p-8">
@@ -22,7 +70,7 @@ export default function StaffManagement() {
           <h1 className="text-4xl font-headline font-bold text-slate-800 tracking-tight">Staff Management</h1>
           <p className="text-slate-500 mt-2 font-medium">Manage employees, schedules, and permissions.</p>
         </div>
-        <button className="bg-primary text-on-primary py-2.5 px-5 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-container transition-colors shadow-md shadow-blue-200">
+        <button onClick={handleOpenCreate} className="bg-primary text-on-primary py-2.5 px-5 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-container transition-colors shadow-md shadow-blue-200">
           <span className="material-symbols-outlined">person_add</span>
           Add Employee
         </button>
@@ -88,8 +136,26 @@ export default function StaffManagement() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button className="text-slate-400 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-blue-50">
-                    <span className="material-symbols-outlined">more_horiz</span>
+                  <button 
+                    onClick={() => navigate(`/staff/${emp.id}`)}
+                    title="Ver perfil"
+                    className="text-slate-400 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-blue-50"
+                  >
+                    <span className="material-symbols-outlined">visibility</span>
+                  </button>
+                  <button 
+                    onClick={() => { setSelectedEmployee(emp); setIsModalOpen(true); }}
+                    title="Edit"
+                    className="text-slate-400 hover:text-primary transition-colors p-2 rounded-lg hover:bg-slate-100"
+                  >
+                    <span className="material-symbols-outlined">edit</span>
+                  </button>
+                  <button 
+                    onClick={() => handleDeactivate(emp.id)}
+                    title="Deactivate"
+                    className="text-slate-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50"
+                  >
+                    <span className="material-symbols-outlined">person_off</span>
                   </button>
                 </td>
               </tr>
@@ -97,6 +163,15 @@ export default function StaffManagement() {
           </tbody>
         </table>
       </div>
+
+      {isModalOpen && (
+        <EmployeeModal 
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSubmit={handleModalSubmit}
+          employee={selectedEmployee}
+        />
+      )}
     </div>
   );
 }

@@ -9,25 +9,32 @@ tags: [arquitectura]
 ## Visión General
 
 ```
-┌─────────────┐     HTTP/JSON     ┌──────────────┐     SQLite
-│   Frontend   │ ◄──────────────► │   Backend    │ ◄──────────► 🗄️ DB
+┌─────────────┐     HTTP/JSON     ┌──────────────┐     PostgreSQL
+│   Frontend   │ ◄──────────────► │   Backend    │ ◄──────────► 🗄️ Supabase
 │ React + TW   │                  │  Flask API   │
 └─────────────┘                  └──────────────┘
+        │                               │
+   Vite Dev Server               Zona: America/Lima
+   Puerto :5173                  Puerto :5000
 ```
 
 ## Principios
 
 1. **Modularidad** — Cada módulo funcional es independiente y autocontenido
 2. **API-first** — El backend expone una API REST consumida por el frontend
-3. **Simplicidad** — SQLite como BD para simplificar deployment y operación
+3. **Rendimiento** — Uso de PostgreSQL (Supabase) con optimizaciones de carga (Eager Loading) para minimizar latencia remota.
 4. **Iterativo** — Se construye módulo a módulo según prioridad del negocio
+5. **Timezone explícito** — Todas las operaciones de fecha/hora usan `America/Lima`
 
-## Módulos Planificados
+## Módulos
 
 | Módulo | Prioridad | Estado |
 |--------|-----------|--------|
-| [[Empleados]] | 🔴 Alta | Pendiente |
-| [[Asistencia]] | 🔴 Alta | Pendiente |
+| [[Empleados]] | 🔴 Alta | ✅ Implementado |
+| [[Asistencia]] | 🔴 Alta | ✅ Implementado |
+| [[Dashboard]] | 🟡 Media | ✅ Implementado |
+| [[Reportes]] | 🟡 Media | ✅ Implementado |
+| [[Autenticacion]] | 🟡 Media | ✅ Implementado |
 
 ## Stack
 

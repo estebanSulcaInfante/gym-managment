@@ -7,13 +7,14 @@ class Asistencia(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'), nullable=False)
     fecha = db.Column(db.Date, nullable=False)
-    hora_entrada = db.Column(db.Time, nullable=False)
+    hora_entrada = db.Column(db.Time, nullable=True)  # nullable para ausencias
     hora_salida = db.Column(db.Time, nullable=True)
     foto_entrada_url = db.Column(db.String(255), nullable=True)
     foto_salida_url = db.Column(db.String(255), nullable=True)
-    estado = db.Column(db.String(20), nullable=True) # puntual, retraso, ausente
+    estado = db.Column(db.String(20), nullable=True) # puntual, retraso, fuera de turno, ausente
     horas_totales = db.Column(db.Float, nullable=True)
     observaciones = db.Column(db.Text, nullable=True)
+    justificacion = db.Column(db.String(50), nullable=True)  # permiso, enfermedad, vacaciones, injustificada
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     empleado = db.relationship('Empleado', backref=db.backref('asistencias', lazy=True))
@@ -29,5 +30,7 @@ class Asistencia(db.Model):
             'foto_salida_url': self.foto_salida_url,
             'estado': self.estado,
             'horas_totales': self.horas_totales,
-            'observaciones': self.observaciones
+            'observaciones': self.observaciones,
+            'justificacion': self.justificacion
         }
+

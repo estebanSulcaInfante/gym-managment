@@ -21,7 +21,12 @@ def create_app(test_config=None):
         app.config.from_mapping(
             SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
             SQLALCHEMY_DATABASE_URI=database_url or f'sqlite:///{db_path}',
-            SQLALCHEMY_TRACK_MODIFICATIONS=False
+            SQLALCHEMY_TRACK_MODIFICATIONS=False,
+            SQLALCHEMY_ENGINE_OPTIONS={
+                "pool_size": 10,
+                "pool_recycle": 1800,
+                "pool_pre_ping": True,
+            }
         )
     else:
         app.config.from_mapping(test_config)
@@ -36,9 +41,11 @@ def create_app(test_config=None):
     db.init_app(app)
     migrate.init_app(app, db)
 
-    from .api import empleados_bp, asistencias_bp
+    from .api import empleados_bp, asistencias_bp, stats_bp, auth_bp
     app.register_blueprint(empleados_bp)
     app.register_blueprint(asistencias_bp)
+    app.register_blueprint(stats_bp)
+    app.register_blueprint(auth_bp)
 
     @app.route('/health')
     def health_check():

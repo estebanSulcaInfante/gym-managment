@@ -22,7 +22,7 @@ export default function Kiosk() {
   }, []);
 
   const loadActivity = () => {
-    getReportesAsistencia(4).then(data => setRecentActivity(data)).catch(console.error);
+    getReportesAsistencia(4).then(response => setRecentActivity(response.data || [])).catch(console.error);
   };
 
   useEffect(() => {
@@ -231,7 +231,7 @@ export default function Kiosk() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-body font-bold text-sm text-on-surface truncate">ID Empleado: {r.empleado_id}</h4>
+                      <h4 className="font-body font-bold text-sm text-on-surface truncate">{r.empleado_nombre || `ID: ${r.empleado_id}`}</h4>
                       <p className="font-body text-xs text-on-surface-variant">
                         {isEntrada ? 'Entrada registrada' : 'Salida registrada'}
                       </p>

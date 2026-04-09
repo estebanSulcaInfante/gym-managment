@@ -4,17 +4,18 @@ tags: [arquitectura]
 
 # Base de Datos
 
-> SQLite — archivo único, zero-config.
+> PostgreSQL — Hospedado en Supabase (Cloud).
 
-## Ubicación
+## Conexión
 
-```
-backend/instance/gym.db
+```bash
+# Configurado vía variable de entorno en backend/.env
+DATABASE_URL="postgresql+pg8000://..."
 ```
 
 ## Esquema
 
-_Por definir al implementar los módulos [[Empleados]] y [[Asistencia]]._
+El esquema se gestiona mediante **SQLAlchemy** y **Flask-Migrate**.
 
 ## Diagrama ER
 

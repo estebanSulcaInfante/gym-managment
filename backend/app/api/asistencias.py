@@ -161,23 +161,29 @@ def editar_asistencia(asist_id):
 @admin_required
 def obtener_pendientes():
     """Retorna la cantidad de bloques huérfanos o ausencias no procesadas de los últimos 7 días."""
-    hoy = datetime.now(LIMATZ).date()
+    ahora_dt = datetime.now(LIMATZ)
+    hoy = ahora_dt.date()
     hace_7_dias = hoy - timedelta(days=7)
 
-    # 1. Sesiones abiertas (sin salida) en días anteriores
-    sesiones_abiertas = Asistencia.query.filter(
+    # 1. Sesiones abiertas (sin salida, vigentes por más de 14 horas)
+    abiertas_potenciales = Asistencia.query.filter(
         Asistencia.fecha >= hace_7_dias,
-        Asistencia.fecha < hoy,
         Asistencia.hora_salida.is_(None),
-        Asistencia.estado != 'ausente'
-    ).count()
+        Asistencia.estado == 'presente'
+    ).all()
 
-    # 2. Ausencias no marcadas: bloques programados sin asistencia vinculada
+    sesiones_abiertas = 0
+    for asist in abiertas_potenciales:
+        dt_entrada = datetime.combine(asist.fecha, asist.hora_entrada).replace(tzinfo=LIMATZ)
+        if ahora_dt > (dt_entrada + timedelta(hours=14)):
+            sesiones_abiertas += 1
+
+    # 2. Ausencias no marcadas: bloques expirados sin asistencia vinculada
     ausencias_pendientes = 0
-    fechas_evaluar = [hace_7_dias + timedelta(days=i) for i in range((hoy - hace_7_dias).days)]
+    # Evaluamos hasta HOY inclusive por si un turno de la mañana ya expiró
+    fechas_evaluar = [hace_7_dias + timedelta(days=i) for i in range((hoy - hace_7_dias).days + 1)]
     
     for f in fechas_evaluar:
-        # Todos los bloques programados para ese día (guard temporal)
         bloques_dia = Horario.query.filter_by(dia_semana=f.weekday()).all()
         bloques_vigentes = [
             b for b in bloques_dia 
@@ -185,14 +191,20 @@ def obtener_pendientes():
         ]
         
         for bloque in bloques_vigentes:
-            # ¿Existe asistencia vinculada a este bloque en esta fecha?
-            existe = Asistencia.query.filter_by(
-                empleado_id=bloque.empleado_id,
-                fecha=f,
-                horario_id=bloque.id
-            ).first()
-            if not existe:
-                ausencias_pendientes += 1
+            if bloque.cruza_medianoche:
+                dt_salida = datetime.combine(f + timedelta(days=1), bloque.hora_salida).replace(tzinfo=LIMATZ)
+            else:
+                salida = bloque.hora_salida or time(23, 59)
+                dt_salida = datetime.combine(f, salida).replace(tzinfo=LIMATZ)
+                
+            if ahora_dt > dt_salida:
+                existe = Asistencia.query.filter_by(
+                    empleado_id=bloque.empleado_id,
+                    fecha=f,
+                    horario_id=bloque.id
+                ).first()
+                if not existe:
+                    ausencias_pendientes += 1
 
     return jsonify({
         'total': sesiones_abiertas + ausencias_pendientes,
@@ -207,48 +219,46 @@ def obtener_pendientes():
 @bp.route('/cerrar-dia', methods=['POST'])
 @admin_required
 def conciliar_dias_pasados():
-    """Auto-cierra jornadas pendientes y marca ausencias por bloque programado."""
-    hoy = datetime.now(LIMATZ).date()
+    """Auto-cierra jornadas pendientes y marca ausencias por bloque programado expirado."""
+    ahora_dt = datetime.now(LIMATZ)
+    hoy = ahora_dt.date()
     hace_7_dias = hoy - timedelta(days=7)
 
     sesiones_cerradas = 0
     ausencias_marcadas = 0
 
-    # 1. Auto-cerrar sesiones abiertas (sin salida)
-    abiertas = Asistencia.query.filter(
+    # 1. Auto-cerrar sesiones abiertas (> 14 horas)
+    abiertas_potenciales = Asistencia.query.filter(
         Asistencia.fecha >= hace_7_dias,
-        Asistencia.fecha < hoy,
         Asistencia.hora_salida.is_(None),
-        Asistencia.estado != 'ausente'
+        Asistencia.estado == 'presente'
     ).all()
 
-    for asist in abiertas:
-        asist.estado = 'revision'
-        asist.justificacion = 'auto-cierre generoso'
-        
-        # Usar snapshot del horario (inmune a cambios posteriores)
-        if asist.hora_salida_programada:
-            asist.hora_salida = asist.hora_salida_programada
-        else:
-            # Fallback: consultar horario actual solo si no hay snapshot (registros legacy)
-            if asist.horario_id:
-                horario = Horario.query.get(asist.horario_id)
-                if horario and horario.hora_salida:
-                    asist.hora_salida = horario.hora_salida
+    for asist in abiertas_potenciales:
+        dt_entrada = datetime.combine(asist.fecha, asist.hora_entrada).replace(tzinfo=LIMATZ)
+        if ahora_dt > (dt_entrada + timedelta(hours=14)):
+            asist.estado = 'revision'
+            asist.justificacion = 'auto-cierre por caducidad'
             
-            if not asist.hora_salida:
-                # Tope de 8 horas si no tiene horario
-                dt_ent_temp = datetime.combine(asist.fecha, asist.hora_entrada)
-                asist.hora_salida = (dt_ent_temp + timedelta(hours=8)).time()
-            
-        # Calcular horas
-        asist.horas_totales = calcular_horas(
-            asist.fecha, asist.hora_entrada, asist.hora_salida, asist.cruza_medianoche
-        )
-        sesiones_cerradas += 1
+            # Usar snapshot del horario (inmune a cambios posteriores)
+            if asist.hora_salida_programada:
+                asist.hora_salida = asist.hora_salida_programada
+            else:
+                if asist.horario_id:
+                    horario = Horario.query.get(asist.horario_id)
+                    if horario and horario.hora_salida:
+                        asist.hora_salida = horario.hora_salida
+                if not asist.hora_salida:
+                    dt_ent_temp = datetime.combine(asist.fecha, asist.hora_entrada)
+                    asist.hora_salida = (dt_ent_temp + timedelta(hours=8)).time()
+                
+            asist.horas_totales = calcular_horas(
+                asist.fecha, asist.hora_entrada, asist.hora_salida, asist.cruza_medianoche
+            )
+            sesiones_cerradas += 1
 
-    # 2. Auto-marcar ausencias por bloque programado
-    fechas_evaluar = [hace_7_dias + timedelta(days=i) for i in range((hoy - hace_7_dias).days)]
+    # 2. Auto-marcar ausencias por bloque programado expirado
+    fechas_evaluar = [hace_7_dias + timedelta(days=i) for i in range((hoy - hace_7_dias).days + 1)]
     for f in fechas_evaluar:
         bloques_dia = Horario.query.filter_by(dia_semana=f.weekday()).all()
         bloques_vigentes = [
@@ -257,33 +267,39 @@ def conciliar_dias_pasados():
         ]
         
         for bloque in bloques_vigentes:
-            # ¿Existe asistencia vinculada a este bloque en esta fecha?
-            existe = Asistencia.query.filter_by(
-                empleado_id=bloque.empleado_id,
-                fecha=f,
-                horario_id=bloque.id
-            ).first()
-            
-            if not existe:
-                ausencia = Asistencia(
+            if bloque.cruza_medianoche:
+                dt_salida = datetime.combine(f + timedelta(days=1), bloque.hora_salida).replace(tzinfo=LIMATZ)
+            else:
+                salida = bloque.hora_salida or time(23, 59)
+                dt_salida = datetime.combine(f, salida).replace(tzinfo=LIMATZ)
+
+            if ahora_dt > dt_salida:
+                existe = Asistencia.query.filter_by(
                     empleado_id=bloque.empleado_id,
                     fecha=f,
-                    horario_id=bloque.id,
-                    estado='ausente',
-                    justificacion='injustificada',
-                    horas_totales=0.0,
-                    hora_entrada_programada=bloque.hora_entrada,
-                    hora_salida_programada=bloque.hora_salida,
-                    cruza_medianoche=bloque.cruza_medianoche
-                )
-                db.session.add(ausencia)
-                ausencias_marcadas += 1
+                    horario_id=bloque.id
+                ).first()
+                
+                if not existe:
+                    ausencia = Asistencia(
+                        empleado_id=bloque.empleado_id,
+                        fecha=f,
+                        horario_id=bloque.id,
+                        estado='ausente',
+                        justificacion='injustificada',
+                        horas_totales=0.0,
+                        hora_entrada_programada=bloque.hora_entrada,
+                        hora_salida_programada=bloque.hora_salida,
+                        cruza_medianoche=bloque.cruza_medianoche
+                    )
+                    db.session.add(ausencia)
+                    ausencias_marcadas += 1
 
     db.session.commit()
 
     return jsonify({
         'status': 'success',
-        'mensaje': 'Días reconciliados exitosamente.',
+        'mensaje': 'Pendientes conciliados exitosamente.',
         'resultado': {
             'sesiones_cerradas_en_revision': sesiones_cerradas,
             'ausencias_auto_marcadas': ausencias_marcadas

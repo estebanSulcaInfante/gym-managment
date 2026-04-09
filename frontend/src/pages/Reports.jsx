@@ -101,16 +101,16 @@ export default function Reports() {
     window.print();
   };
 
-  // ─── Cerrar día ───
+  // ─── Conciliar Pendientes ───
   const handleCerrarDia = async () => {
-    if (!confirm('Esto marcará como AUSENTE a todos los empleados que no vinieron hoy. ¿Continuar?')) return;
+    if (!confirm('Esto auto-cerrará turnos olvidados (>14 hrs) y marcará como AUSENTE a quienes no asistieron a sus turnos. ¿Continuar?')) return;
     try {
       const res = await cerrarDia(null);
       alert(res.mensaje);
       fetchReport();
       fetchStats();
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al cerrar el día');
+      alert(err.response?.data?.error || 'Error al conciliar');
     }
   };
 
@@ -166,8 +166,8 @@ export default function Reports() {
           <p className="text-slate-500 mt-2 print:hidden">Monitoreo de puntualidad y horas efectivas del personal.</p>
         </div>
         <div className="flex space-x-3 print:hidden">
-          <button onClick={handleCerrarDia} className="flex items-center px-4 py-2 bg-red-50 text-red-700 font-semibold text-sm rounded-lg border border-red-200 hover:bg-red-100 transition-colors">
-            <span className="material-symbols-outlined mr-2 text-lg">event_busy</span>Cerrar Día
+          <button onClick={handleCerrarDia} className="flex items-center px-4 py-2 bg-amber-50 text-amber-700 font-semibold text-sm rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors">
+            <span className="material-symbols-outlined mr-2 text-lg">fact_check</span>Conciliar Pendientes
           </button>
           <button onClick={handleExportCSV} className="flex items-center px-4 py-2 bg-white text-slate-700 font-semibold text-sm rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
             <span className="material-symbols-outlined mr-2 text-lg">download</span>CSV

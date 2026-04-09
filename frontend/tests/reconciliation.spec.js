@@ -54,7 +54,7 @@ test.describe('Reconciliación y Reportes', () => {
     await expect(adminRow).toContainText('olvido_salida');
   });
 
-  test('Debería poder ejecutar auto-cierre de jornadas (Cerrar Día)', async ({ page }) => {
+  test('Debería poder ejecutar auto-cierre de jornadas (Conciliar Pendientes)', async ({ page }) => {
     // Ir a reportes
     await page.goto('/reports');
     await expect(page.locator('h2', { hasText: 'Reportes de Asistencia' })).toBeVisible();
@@ -62,7 +62,7 @@ test.describe('Reconciliación y Reportes', () => {
     // Escuchar el confirm() dialog del navegador y aceptarlo
     page.once('dialog', dialog => dialog.accept());
     
-    await page.click('button:has-text("Cerrar Día")');
+    await page.click('button:has-text("Conciliar Pendientes")');
 
     // Escuchar el alert() que muestra resultado
     page.once('dialog', dialog => dialog.dismiss());

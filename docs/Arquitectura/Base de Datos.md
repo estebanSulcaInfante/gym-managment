@@ -51,6 +51,7 @@ erDiagram
         time hora_entrada
         time hora_salida
         bool activo
+        datetime updated_at "Para Tracking de Modificaciones"
     }
     
     ASISTENCIA {
@@ -59,9 +60,11 @@ erDiagram
         date fecha
         time hora_entrada
         time hora_salida
+        time hora_entrada_programada "Snapshot INMUTABLE"
+        time hora_salida_programada "Snapshot INMUTABLE"
         string foto_entrada_url
         string foto_salida_url
-        string estado "puntual|retraso|ausente"
+        string estado "puntual|retraso|ausente|fuera de turno..."
         float horas_totales
         string observaciones
         datetime created_at
@@ -71,6 +74,12 @@ erDiagram
     EMPLEADO ||--o{ HORARIO : "tiene"
     EMPLEADO ||--o{ ASISTENCIA : "registra"
 ```
+
+## Patrones de Datos
+
+### Snapshots de Horario
+Para asegurar la integridad histórica, las reglas de turnos se capturan en la tabla `ASISTENCIA` (`hora_entrada_programada` y `hora_salida_programada`) en el momento que ocurre el evento (Kiosko) o se evalúan ausencias pasadas. 
+Esto evita "phantom absences" y corrupción de datos cuando los horarios de un empleado cambian retrospectivamente.
 
 ## Migraciones
 

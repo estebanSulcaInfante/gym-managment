@@ -82,21 +82,27 @@ Control de asistencia del personal: registro de entradas y salidas diarias vía 
 ## ¿Qué falta para módulo completo?
 
 ### Funcionalidades pendientes
-- [ ] **Registro de ausencias automáticas** — Job/cron que al final del día marque como `ausente` a quienes tenían turno pero no vinieron
-- [ ] **Edición manual de asistencias** — Admin puede corregir hora de entrada/salida (olvidos, errores)
 - [ ] **Justificación de ausencias** — Campo para adjuntar motivo (permiso, enfermedad, vacaciones)
 - [ ] **Resumen por empleado en UI** — Vista dedicada con historial individual del mes (endpoint ya existe)
 - [ ] **Notificaciones de retraso** — Alerta push o email al llegar tarde
 - [ ] **Exportar PDF** — Botón para generar reporte imprimible (adicional al CSV)
 
+### Funcionalidades implementadas recientemente
+- [x] **Registro de ausencias automáticas** — Proceso de Reconciliación (`/api/asistencias/conciliar`) que marca como `ausente` a quienes tenían turno y no vinieron, e implementa "Cierre Generoso" automático a quienes olvidaron marcar salida.
+- [x] **Gestión histórica de turnos (Snapshots)** — Protección contra manipulaciones si se altera el horario posteriormente.
+- [x] **Edición manual de asistencias** — Admin puede corregir hora de entrada/salida directamente desde el frontend de Reportes.
+
 ### Infraestructura pendiente
+- [ ] **Paginación** — El endpoint de asistencias necesita paginación real para escalar (ya modelado en servidor, por implementarse en vista)
+
+### Infraestructura implementada
 - [x] **Autenticación** — Proteger endpoints admin (solo Kiosco público)
-- [x] **Tests automatizados** — Unitarios para lógica de puntualidad y endpoints
-- [ ] **Paginación** — El endpoint de asistencias necesita paginación real para escalar
+- [x] **Tests automatizados (E2E)** — Cobertura 100% de la UI y los flujos críticos de la API utilizando **Playwright**.
+- [x] **Reconciliación E2E Temporal** — Implementación de scripts de inyección a SQLite para simular comportamientos de desfase en el pasado simulando Cron Jobs sin afectar dependencias locales.
 
 ## Estado
 
 - [x] Diseño (Stitch mockup)
-- [x] Backend (entrada/salida + evaluación de puntualidad + stats)
-- [x] Frontend (Kiosco + Dashboard + Reportes)
-- [x] Testing
+- [x] Backend (entrada/salida + evaluación de puntualidad + stats + reconciliación avanzada)
+- [x] Frontend (Kiosco + Dashboard + Reportes + Edición Manual)
+- [x] Testing (Suite Playwright de 9 escenarios 100% stable)

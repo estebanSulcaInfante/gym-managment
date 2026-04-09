@@ -37,10 +37,10 @@ export default function Login() {
             <span className="material-symbols-outlined text-white text-3xl">fitness_center</span>
           </div>
           <h1 className="text-3xl font-headline font-bold text-white tracking-tight">
-            KINETIC
+            SPORT GYM
           </h1>
           <p className="text-sm text-white/40 font-label tracking-[0.3em] uppercase mt-1">
-            Precision · Elite Performance
+            El Templo del Hierro
           </p>
         </div>
 
@@ -117,7 +117,7 @@ export default function Login() {
 
         {/* Footer hint */}
         <p className="text-center text-white/20 text-xs mt-8">
-          © 2026 Kinetic Precision — Gym Management System
+          © 2026 Sport Gym — El Templo del Hierro
         </p>
       </div>
     </div>

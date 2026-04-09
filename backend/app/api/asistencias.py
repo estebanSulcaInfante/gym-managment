@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from zoneinfo import ZoneInfo
-from datetime import datetime, timezone, date, timedelta
+from datetime import datetime, timezone, date, timedelta, time
 from app.models import Asistencia, Empleado, Horario
 from app import db
 from app.utils.supabase_storage import upload_base64_image
@@ -9,6 +9,60 @@ from app.decorators import login_required, admin_required
 LIMATZ = ZoneInfo("America/Lima")
 
 bp = Blueprint('asistencias', __name__, url_prefix='/api/asistencias')
+
+# ─── Utilidades ───
+
+def calcular_horas(fecha, hora_entrada, hora_salida, cruza_medianoche):
+    """Calcula horas trabajadas soportando turnos que cruzan medianoche."""
+    dt_entrada = datetime.combine(fecha, hora_entrada)
+    if cruza_medianoche:
+        dt_salida = datetime.combine(fecha + timedelta(days=1), hora_salida)
+    else:
+        dt_salida = datetime.combine(fecha, hora_salida)
+    delta_sec = (dt_salida - dt_entrada).total_seconds()
+    if delta_sec < 0:
+        delta_sec = 0.0
+    return round(delta_sec / 3600, 2)
+
+
+def encontrar_bloque_actual(bloques, hora_actual):
+    """Dado una lista de bloques de horario y la hora actual, determina en cuál bloque cae.
+    Retorna el bloque más cercano dentro de su ventana de entrada (30 min antes → hora_salida).
+    """
+    mejor_bloque = None
+    menor_distancia = float('inf')
+
+    for bloque in bloques:
+        if not bloque.hora_entrada:
+            continue
+
+        ent_min = bloque.hora_entrada.hour * 60 + bloque.hora_entrada.minute
+        sal_min = bloque.hora_salida.hour * 60 + bloque.hora_salida.minute if bloque.hora_salida else ent_min + 480
+        curr_min = hora_actual.hour * 60 + hora_actual.minute
+
+        # Ventana de entrada: 30 min antes de hora_entrada hasta hora_salida
+        ventana_inicio = ent_min - 30
+
+        if bloque.cruza_medianoche:
+            # Turno nocturno: ventana va de (entrada-30min) hasta medianoche, 
+            # o desde medianoche hasta hora_salida del día siguiente
+            if curr_min >= ventana_inicio or curr_min <= sal_min:
+                dist = abs(curr_min - ent_min) if curr_min >= ventana_inicio else (1440 - ent_min + curr_min)
+                if dist < menor_distancia:
+                    menor_distancia = dist
+                    mejor_bloque = bloque
+        else:
+            # Turno normal
+            if ventana_inicio <= curr_min <= sal_min:
+                dist = abs(curr_min - ent_min)
+                if dist < menor_distancia:
+                    menor_distancia = dist
+                    mejor_bloque = bloque
+
+    return mejor_bloque
+
+
+# ─── Reportes ───
 
 @bp.route('', methods=['GET'])
 @login_required
@@ -69,7 +123,6 @@ def editar_asistencia(asist_id):
 
     if 'hora_entrada' in data:
         if data['hora_entrada']:
-            h, m = map(int, data['hora_entrada'].split(':'))
             asist.hora_entrada = datetime.strptime(data['hora_entrada'], '%H:%M').time()
         else:
             asist.hora_entrada = None
@@ -91,21 +144,23 @@ def editar_asistencia(asist_id):
 
     # Recalcular horas si ambas horas presentes
     if asist.hora_entrada and asist.hora_salida:
-        dt_ent = datetime.combine(asist.fecha, asist.hora_entrada)
-        dt_sal = datetime.combine(asist.fecha, asist.hora_salida)
-        asist.horas_totales = round((dt_sal - dt_ent).total_seconds() / 3600, 2)
+        asist.horas_totales = calcular_horas(asist.fecha, asist.hora_entrada, asist.hora_salida, asist.cruza_medianoche)
     elif not asist.hora_entrada:
         asist.horas_totales = None
 
     db.session.commit()
-    return jsonify({'status': 'success', 'asistencia': asist.to_dict()}), 200
+
+    result = asist.to_dict()
+    emp = Empleado.query.get(asist.empleado_id)
+    result['empleado_nombre'] = f"{emp.nombre} {emp.apellido}" if emp else ''
+    return jsonify(result), 200
 
 
 # ─── Reconciliación de Jornada ───
 @bp.route('/pendientes', methods=['GET'])
 @admin_required
 def obtener_pendientes():
-    """Retorna la cantidad de registros huérfanos o ausencias no procesadas de los últimos 7 días."""
+    """Retorna la cantidad de bloques huérfanos o ausencias no procesadas de los últimos 7 días."""
     hoy = datetime.now(LIMATZ).date()
     hace_7_dias = hoy - timedelta(days=7)
 
@@ -117,20 +172,27 @@ def obtener_pendientes():
         Asistencia.estado != 'ausente'
     ).count()
 
-    # 2. Ausencias no marcadas: Empleados con horario que no tienen asistencia registrada en días pasados
+    # 2. Ausencias no marcadas: bloques programados sin asistencia vinculada
     ausencias_pendientes = 0
-    # Generamos los días
     fechas_evaluar = [hace_7_dias + timedelta(days=i) for i in range((hoy - hace_7_dias).days)]
     
     for f in fechas_evaluar:
-        # Empleados con turno ese día
-        emp_con_turno_ids = {horario.empleado_id for horario in Horario.query.filter_by(dia_semana=f.weekday()).all() if horario.hora_entrada}
-        # Empleados con asistencia (cualquier estado) ese día
-        emp_con_asist_ids = {a.empleado_id for a in Asistencia.query.filter_by(fecha=f).all()}
+        # Todos los bloques programados para ese día (guard temporal)
+        bloques_dia = Horario.query.filter_by(dia_semana=f.weekday()).all()
+        bloques_vigentes = [
+            b for b in bloques_dia 
+            if b.hora_entrada and (b.updated_at is None or b.updated_at.date() <= f)
+        ]
         
-        # Intersección: tenían turno pero no hay asistencia
-        faltantes = emp_con_turno_ids - emp_con_asist_ids
-        ausencias_pendientes += len(faltantes)
+        for bloque in bloques_vigentes:
+            # ¿Existe asistencia vinculada a este bloque en esta fecha?
+            existe = Asistencia.query.filter_by(
+                empleado_id=bloque.empleado_id,
+                fecha=f,
+                horario_id=bloque.id
+            ).first()
+            if not existe:
+                ausencias_pendientes += 1
 
     return jsonify({
         'total': sesiones_abiertas + ausencias_pendientes,
@@ -142,16 +204,17 @@ def obtener_pendientes():
 
 
 @bp.route('/conciliar', methods=['POST'])
+@bp.route('/cerrar-dia', methods=['POST'])
 @admin_required
 def conciliar_dias_pasados():
-    """Auto-cierra jornadas pendientes con modalidad mixta: asigna hora de salida contractual y respeta entrada real."""
+    """Auto-cierra jornadas pendientes y marca ausencias por bloque programado."""
     hoy = datetime.now(LIMATZ).date()
     hace_7_dias = hoy - timedelta(days=7)
 
     sesiones_cerradas = 0
     ausencias_marcadas = 0
 
-    # 1. auto-cerrar sesiones abiertas
+    # 1. Auto-cerrar sesiones abiertas (sin salida)
     abiertas = Asistencia.query.filter(
         Asistencia.fecha >= hace_7_dias,
         Asistencia.fecha < hoy,
@@ -163,45 +226,58 @@ def conciliar_dias_pasados():
         asist.estado = 'revision'
         asist.justificacion = 'auto-cierre generoso'
         
-        dia_semana = asist.fecha.weekday()
-        horario = Horario.query.filter_by(empleado_id=asist.empleado_id, dia_semana=dia_semana).first()
-        
-        if horario and horario.hora_salida:
-            asist.hora_salida = horario.hora_salida
+        # Usar snapshot del horario (inmune a cambios posteriores)
+        if asist.hora_salida_programada:
+            asist.hora_salida = asist.hora_salida_programada
         else:
-            # Tope de 8 horas si no tiene horario
-            dt_ent_temp = datetime.combine(asist.fecha, asist.hora_entrada)
-            asist.hora_salida = (dt_ent_temp + timedelta(hours=8)).time()
+            # Fallback: consultar horario actual solo si no hay snapshot (registros legacy)
+            if asist.horario_id:
+                horario = Horario.query.get(asist.horario_id)
+                if horario and horario.hora_salida:
+                    asist.hora_salida = horario.hora_salida
+            
+            if not asist.hora_salida:
+                # Tope de 8 horas si no tiene horario
+                dt_ent_temp = datetime.combine(asist.fecha, asist.hora_entrada)
+                asist.hora_salida = (dt_ent_temp + timedelta(hours=8)).time()
             
         # Calcular horas
-        dt_ent = datetime.combine(asist.fecha, asist.hora_entrada)
-        dt_sal = datetime.combine(asist.fecha, asist.hora_salida)
-        
-        delta_sec = (dt_sal - dt_ent).total_seconds()
-        if delta_sec < 0:
-            delta_sec = 0.0 # Caso borde si entró DESPUES de su hora de salida teórica
-            
-        asist.horas_totales = round(delta_sec / 3600, 2)
+        asist.horas_totales = calcular_horas(
+            asist.fecha, asist.hora_entrada, asist.hora_salida, asist.cruza_medianoche
+        )
         sesiones_cerradas += 1
 
-    # 2. auto-marcar ausencias
+    # 2. Auto-marcar ausencias por bloque programado
     fechas_evaluar = [hace_7_dias + timedelta(days=i) for i in range((hoy - hace_7_dias).days)]
     for f in fechas_evaluar:
-        turnos_dia = Horario.query.filter_by(dia_semana=f.weekday()).all()
-        emp_con_turno_ids = {t.empleado_id for t in turnos_dia if t.hora_entrada}
-        emp_con_asist_ids = {a.empleado_id for a in Asistencia.query.filter_by(fecha=f).all()}
+        bloques_dia = Horario.query.filter_by(dia_semana=f.weekday()).all()
+        bloques_vigentes = [
+            b for b in bloques_dia
+            if b.hora_entrada and (b.updated_at is None or b.updated_at.date() <= f)
+        ]
         
-        faltantes = emp_con_turno_ids - emp_con_asist_ids
-        for emp_id in faltantes:
-            ausencia = Asistencia(
-                empleado_id=emp_id,
+        for bloque in bloques_vigentes:
+            # ¿Existe asistencia vinculada a este bloque en esta fecha?
+            existe = Asistencia.query.filter_by(
+                empleado_id=bloque.empleado_id,
                 fecha=f,
-                estado='ausente',
-                justificacion='injustificada',
-                horas_totales=0.0
-            )
-            db.session.add(ausencia)
-            ausencias_marcadas += 1
+                horario_id=bloque.id
+            ).first()
+            
+            if not existe:
+                ausencia = Asistencia(
+                    empleado_id=bloque.empleado_id,
+                    fecha=f,
+                    horario_id=bloque.id,
+                    estado='ausente',
+                    justificacion='injustificada',
+                    horas_totales=0.0,
+                    hora_entrada_programada=bloque.hora_entrada,
+                    hora_salida_programada=bloque.hora_salida,
+                    cruza_medianoche=bloque.cruza_medianoche
+                )
+                db.session.add(ausencia)
+                ausencias_marcadas += 1
 
     db.session.commit()
 
@@ -215,9 +291,13 @@ def conciliar_dias_pasados():
     }), 200
 
 
+# ─── Registro de Asistencia (Kiosko) ───
+
 @bp.route('/entrada', methods=['POST'])
 def registrar_entrada():
-    """Registra la entrada de un empleado por su DNI (Kiosko)"""
+    """Registra la entrada de un empleado por su DNI (Kiosko).
+    Soporta múltiples bloques por día (turno partido).
+    """
     data = request.json
     dni = data.get('dni')
     foto_b64 = data.get('foto_url')
@@ -233,49 +313,81 @@ def registrar_entrada():
     if not emp.activo:
         return jsonify({'error': 'Empleado inactivo'}), 403
 
-    hoy = datetime.now(LIMATZ).date()
-    asist_existente = Asistencia.query.filter_by(empleado_id=emp.id, fecha=hoy).first()
-
-    # Si ya existe un registro de ausencia, convertirlo en entrada
-    if asist_existente and asist_existente.estado == 'ausente':
-        ahora = datetime.now(LIMATZ).time()
-        asist_existente.hora_entrada = ahora
-        asist_existente.estado = 'retraso'
-        asist_existente.justificacion = None
-        asist_existente.foto_entrada_url = foto_url
-        db.session.commit()
-        return jsonify({
-            'status': 'success',
-            'mensaje': 'Entrada registrada (ausencia convertida)',
-            'empleado': f"{emp.nombre} {emp.apellido}",
-            'asistencia': asist_existente.to_dict()
-        }), 201
-
-    if asist_existente:
-        return jsonify({'error': 'La entrada ya fue registrada para hoy'}), 400
-
     ahora_dt = datetime.now(LIMATZ)
+    hoy = ahora_dt.date()
     ahora = ahora_dt.time()
-    
+
+    # Obtener todos los bloques programados para hoy
     dia_semana = hoy.weekday()
-    horario_hoy = Horario.query.filter_by(empleado_id=emp.id, dia_semana=dia_semana).first()
-    
-    estado = 'puntual'
-    if horario_hoy and horario_hoy.hora_entrada:
-        ent_min = horario_hoy.hora_entrada.hour * 60 + horario_hoy.hora_entrada.minute
+    bloques_hoy = Horario.query.filter_by(empleado_id=emp.id, dia_semana=dia_semana).all()
+
+    # Determinar en qué bloque cae la hora actual
+    bloque_actual = encontrar_bloque_actual(bloques_hoy, ahora)
+
+    if bloque_actual:
+        # ¿Ya existe asistencia para este bloque específico hoy?
+        asist_existente = Asistencia.query.filter_by(
+            empleado_id=emp.id, fecha=hoy, horario_id=bloque_actual.id
+        ).first()
+
+        # Si existe una ausencia para este bloque, convertirla en entrada
+        if asist_existente and asist_existente.estado == 'ausente':
+            asist_existente.hora_entrada = ahora
+            asist_existente.estado = 'retraso'
+            asist_existente.justificacion = None
+            asist_existente.foto_entrada_url = foto_url
+            asist_existente.hora_entrada_programada = bloque_actual.hora_entrada
+            asist_existente.hora_salida_programada = bloque_actual.hora_salida
+            asist_existente.cruza_medianoche = bloque_actual.cruza_medianoche
+            db.session.commit()
+            return jsonify({
+                'status': 'success',
+                'mensaje': 'Entrada registrada (ausencia convertida)',
+                'empleado': f"{emp.nombre} {emp.apellido}",
+                'asistencia': asist_existente.to_dict()
+            }), 201
+
+        if asist_existente:
+            return jsonify({'error': 'La entrada ya fue registrada para este turno'}), 400
+
+        # Evaluar puntualidad contra el bloque
+        estado = 'puntual'
+        ent_min = bloque_actual.hora_entrada.hour * 60 + bloque_actual.hora_entrada.minute
         curr_min = ahora.hour * 60 + ahora.minute
         if curr_min > ent_min + 15:
             estado = 'retraso'
-    elif horario_hoy and not horario_hoy.hora_entrada:
-        estado = 'fuera de turno'
 
-    nueva_asist = Asistencia(
-        empleado_id=emp.id,
-        fecha=hoy,
-        hora_entrada=ahora,
-        foto_entrada_url=foto_url,
-        estado=estado
-    )
+        nueva_asist = Asistencia(
+            empleado_id=emp.id,
+            fecha=hoy,
+            horario_id=bloque_actual.id,
+            hora_entrada=ahora,
+            foto_entrada_url=foto_url,
+            estado=estado,
+            hora_entrada_programada=bloque_actual.hora_entrada,
+            hora_salida_programada=bloque_actual.hora_salida,
+            cruza_medianoche=bloque_actual.cruza_medianoche
+        )
+    else:
+        # No cae en ningún bloque → "fuera de turno"
+        # Verificar que no haya una asistencia "fuera de turno" ya abierta hoy
+        asist_fuera = Asistencia.query.filter_by(
+            empleado_id=emp.id, fecha=hoy, horario_id=None
+        ).filter(Asistencia.hora_salida.is_(None)).first()
+        
+        if asist_fuera:
+            return jsonify({'error': 'Ya tienes una entrada activa fuera de turno'}), 400
+
+        nueva_asist = Asistencia(
+            empleado_id=emp.id,
+            fecha=hoy,
+            horario_id=None,
+            hora_entrada=ahora,
+            foto_entrada_url=foto_url,
+            estado='fuera de turno',
+            cruza_medianoche=False
+        )
+
     db.session.add(nueva_asist)
     db.session.commit()
 
@@ -288,7 +400,7 @@ def registrar_entrada():
 
 @bp.route('/salida', methods=['POST'])
 def registrar_salida():
-    """Registra la salida usando el DNI"""
+    """Registra la salida usando el DNI. Busca la asistencia abierta más reciente."""
     data = request.json
     dni = data.get('dni')
     foto_b64 = data.get('foto_url')
@@ -303,23 +415,29 @@ def registrar_salida():
         return jsonify({'error': 'Empleado no encontrado'}), 404
 
     hoy = datetime.now(LIMATZ).date()
-    asist_existente = Asistencia.query.filter_by(empleado_id=emp.id, fecha=hoy).first()
     
-    if not asist_existente or not asist_existente.hora_entrada:
-        return jsonify({'error': 'No hay registro de entrada para hoy'}), 400
-        
-    if asist_existente.hora_salida:
-        return jsonify({'error': 'La salida ya fue registrada'}), 400
+    # Buscar la asistencia abierta más reciente (sin hora_salida)
+    # Puede ser de hoy o de ayer (si es un turno nocturno que empezó ayer)
+    asist_abierta = Asistencia.query.filter(
+        Asistencia.empleado_id == emp.id,
+        Asistencia.hora_entrada.isnot(None),
+        Asistencia.hora_salida.is_(None),
+        Asistencia.estado != 'ausente',
+        Asistencia.fecha >= hoy - timedelta(days=1)  # Buscar ayer y hoy
+    ).order_by(Asistencia.fecha.desc(), Asistencia.hora_entrada.desc()).first()
+
+    if not asist_abierta:
+        return jsonify({'error': 'No hay registro de entrada abierto'}), 400
 
     ahora_dt = datetime.now(LIMATZ)
     ahora = ahora_dt.time()
-    asist_existente.hora_salida = ahora
-    asist_existente.foto_salida_url = foto_url
+    asist_abierta.hora_salida = ahora
+    asist_abierta.foto_salida_url = foto_url
     
-    dt_entrada = datetime.combine(hoy, asist_existente.hora_entrada)
-    dt_salida = datetime.combine(hoy, ahora)
-    delta = dt_salida - dt_entrada
-    asist_existente.horas_totales = round(delta.total_seconds() / 3600, 2)
+    # Calcular horas considerando cruza_medianoche
+    asist_abierta.horas_totales = calcular_horas(
+        asist_abierta.fecha, asist_abierta.hora_entrada, ahora, asist_abierta.cruza_medianoche
+    )
 
     db.session.commit()
 
@@ -327,5 +445,5 @@ def registrar_salida():
         'status': 'success',
         'mensaje': 'Salida registrada',
         'empleado': f"{emp.nombre} {emp.apellido}",
-        'asistencia': asist_existente.to_dict()
+        'asistencia': asist_abierta.to_dict()
     }), 200

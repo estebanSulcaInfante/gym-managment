@@ -66,6 +66,20 @@ export default function Reports() {
     return (a.empleado_nombre || '').toLowerCase().includes(searchName.toLowerCase());
   });
 
+  const groupedAsistencias = Object.values(filtered.reduce((acc, a) => {
+    const key = `${a.empleado_id}_${a.fecha}`;
+    if (!acc[key]) {
+      acc[key] = {
+        ...a,
+        horas_totales: 0,
+        bloques: []
+      };
+    }
+    acc[key].bloques.push(a);
+    acc[key].horas_totales += (a.horas_totales || 0);
+    return acc;
+  }, {})).sort((a, b) => b.fecha.localeCompare(a.fecha) || (a.empleado_nombre || '').localeCompare(b.empleado_nombre || ''));
+
   // ─── Export CSV ───
   const handleExportCSV = () => {
     if (filtered.length === 0) return;
@@ -219,7 +233,7 @@ export default function Reports() {
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100 mb-10">
         <div className="px-8 py-5 flex justify-between items-center border-b border-slate-100 print:px-4 print:py-2">
           <h3 className="text-lg font-bold font-headline text-slate-800">Registros Detallados</h3>
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{total} registros</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{total} asistencias (paginadas)</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -229,7 +243,7 @@ export default function Reports() {
                 <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-widest print:px-2">Fecha</th>
                 <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-widest print:px-2">Entrada</th>
                 <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-widest print:px-2">Salida</th>
-                <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-widest print:px-2">Horas</th>
+                <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-widest print:px-2">Horas Totales</th>
                 <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-widest print:px-2">Estado</th>
                 <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-widest print:px-2">Justificación</th>
                 <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-widest print:hidden"></th>
@@ -238,36 +252,81 @@ export default function Reports() {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr><td colSpan="8" className="text-center py-10 text-slate-400">Cargando datos...</td></tr>
-              ) : filtered.length === 0 ? (
+              ) : groupedAsistencias.length === 0 ? (
                 <tr><td colSpan="8" className="text-center py-10 text-slate-400">Sin registros.</td></tr>
-              ) : filtered.map((a) => (
-                <tr key={a.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-8 py-4 print:px-2 print:py-1">
+              ) : groupedAsistencias.map((group) => (
+                <tr key={`${group.empleado_id}_${group.fecha}`} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-8 py-4 align-top print:px-2 print:py-1">
                     <div className="flex items-center">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold mr-3 font-headline text-xs ${getInitialStyle(a.empleado_nombre)}`}>
-                        {(a.empleado_nombre || '??').split(' ').map(n => n[0]).join('').substring(0, 2)}
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold mr-3 font-headline text-xs ${getInitialStyle(group.empleado_nombre)}`}>
+                        {(group.empleado_nombre || '??').split(' ').map(n => n[0]).join('').substring(0, 2)}
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-slate-800">{a.empleado_nombre}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">{a.empleado_cargo}</p>
+                        <p className="font-bold text-sm text-slate-800">{group.empleado_nombre}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">{group.empleado_cargo}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium text-slate-600 print:px-2 print:text-xs">{a.fecha}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-slate-800 print:px-2 print:text-xs">{a.hora_entrada ? a.hora_entrada.substring(0, 5) : '—'}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 print:px-2 print:text-xs">{a.hora_salida ? a.hora_salida.substring(0, 5) : '—'}</td>
-                  <td className="px-6 py-4 text-sm font-headline font-bold text-primary print:px-2 print:text-xs">{a.horas_totales ? `${a.horas_totales}h` : '—'}</td>
-                  <td className="px-6 py-4 print:px-2">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${estadoBadge(a.estado)}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${estadoDot(a.estado)}`}></span>
-                      {a.estado === 'puntual' ? 'Puntual' : a.estado === 'retraso' ? 'Retraso' : a.estado === 'ausente' ? 'Ausente' : a.estado === 'revision' ? 'Auto-Cierre' : a.estado || '—'}
-                    </span>
+                  <td className="px-6 py-4 text-sm font-medium text-slate-600 align-top print:px-2 print:text-xs">
+                    {group.fecha}
                   </td>
-                  <td className="px-6 py-4 text-xs text-slate-500 print:px-2">{a.justificacion || '—'}</td>
-                  <td className="px-6 py-4 print:hidden">
-                    <button onClick={() => openEditModal(a)} title="Editar" className="text-slate-400 hover:text-primary p-1.5 rounded hover:bg-slate-100 transition-colors">
-                      <span className="material-symbols-outlined text-lg">edit_note</span>
-                    </button>
+                  <td className="px-6 py-4 align-top print:px-2 print:text-xs">
+                    <div className="flex flex-col gap-2">
+                      {group.bloques.map(b => (
+                        <div key={b.id} className="h-6 flex items-center text-sm font-bold text-slate-800">
+                          {b.hora_entrada ? b.hora_entrada.substring(0, 5) : '—'}
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 align-top print:px-2 print:text-xs">
+                    <div className="flex flex-col gap-2">
+                      {group.bloques.map(b => (
+                        <div key={b.id} className="h-6 flex items-center text-sm text-slate-600">
+                          {b.hora_salida ? b.hora_salida.substring(0, 5) : '—'}
+                          {b.cruza_medianoche && b.hora_salida && (
+                            <span className="ml-1 text-[10px] text-indigo-500 font-bold" title="Día siguiente">(+1)</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-headline font-bold text-primary align-top print:px-2 print:text-xs">
+                    {group.horas_totales > 0 ? `${group.horas_totales.toFixed(1)}h` : '—'}
+                  </td>
+                  <td className="px-6 py-4 align-top print:px-2">
+                    <div className="flex flex-col gap-2">
+                      {group.bloques.map(b => (
+                        <div key={b.id} className="h-6 flex items-center">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${estadoBadge(b.estado)}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full mr-1 ${estadoDot(b.estado)}`}></span>
+                            {b.estado === 'puntual' ? 'Puntual' : b.estado === 'retraso' ? 'Retraso' : b.estado === 'ausente' ? 'Ausente' : b.estado === 'revision' ? 'Auto-Cierre' : b.estado || '—'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 align-top text-xs text-slate-500 print:px-2">
+                    <div className="flex flex-col gap-2">
+                      {group.bloques.map(b => (
+                        <div key={b.id} className="h-6 flex items-center">
+                          <span className="truncate max-w-[120px]" title={b.justificacion || ''}>
+                            {b.justificacion || '—'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 align-top print:hidden">
+                    <div className="flex flex-col gap-2">
+                      {group.bloques.map(b => (
+                        <div key={b.id} className="h-6 flex items-center">
+                          <button onClick={() => openEditModal(b)} title="Editar" className="text-slate-400 hover:text-primary p-0.5 rounded hover:bg-slate-100 transition-colors">
+                            <span className="material-symbols-outlined text-[16px]">edit_note</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -322,7 +381,7 @@ export default function Reports() {
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
             <div className="relative z-10">
               <span className="material-symbols-outlined text-white text-4xl mb-4">auto_awesome</span>
-              <h4 className="text-xl font-bold font-headline text-white">Insight Kinetic</h4>
+              <h4 className="text-xl font-bold font-headline text-white">Insight Sport Gym</h4>
               <p className="text-blue-100 text-sm mt-2 leading-relaxed">
                 La puntualidad del equipo es del <strong className="text-white">{stats.puntualidad_promedio}%</strong> este mes.
                 {stats.retrasos_mes > 0 ? ` Se han detectado ${stats.retrasos_mes} retrasos acumulados.` : ' Sin retrasos registrados.'}

@@ -38,8 +38,8 @@ export default function Sidebar() {
     <nav className="fixed left-0 top-0 h-screen w-64 z-40 bg-white/85 backdrop-blur-xl shadow-2xl flex flex-col pt-20 pb-8 px-4 hidden md:flex">
       {/* Branding */}
       <div className="mb-8 px-2">
-        <h2 className="font-headline font-bold text-blue-700 text-lg uppercase tracking-wider">KINETIC PRECISION</h2>
-        <p className="text-xs text-slate-500 font-semibold tracking-widest uppercase mt-1">Elite Performance</p>
+        <h2 className="font-headline font-bold text-blue-700 text-lg uppercase tracking-wider">SPORT GYM</h2>
+        <p className="text-xs text-slate-500 font-semibold tracking-widest uppercase mt-1">El Templo del Hierro</p>
       </div>
 
       {/* Nav Sections */}

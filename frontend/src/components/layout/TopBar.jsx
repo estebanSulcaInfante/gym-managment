@@ -4,7 +4,7 @@ export default function TopBar() {
       <div className="flex justify-between items-center px-6 h-16 w-full">
         {/* Empty space for mobile menu toggle or branding if needed when sidebar collapses */}
         <div className="flex items-center space-x-4 pl-64 hidden md:flex">
-          <span className="font-headline font-black tracking-tighter text-2xl text-blue-700">KINETIC</span>
+          <span className="font-headline font-black tracking-tighter text-2xl text-blue-700">SPORT GYM</span>
         </div>
 
         <div className="flex items-center gap-4 ml-auto">

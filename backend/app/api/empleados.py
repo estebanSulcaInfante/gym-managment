@@ -51,11 +51,20 @@ def create_empleado():
 
     if 'horarios' in data and isinstance(data['horarios'], list):
         for h_data in data['horarios']:
+            he = h_data.get('hora_entrada') or ''
+            hs = h_data.get('hora_salida') or ''
+            hora_e = datetime.strptime(he, '%H:%M').time() if he else None
+            hora_s = datetime.strptime(hs, '%H:%M').time() if hs else None
+            # Auto-detect cruza_medianoche: si hora_salida < hora_entrada
+            cruza = h_data.get('cruza_medianoche', False)
+            if hora_e and hora_s and hora_s < hora_e:
+                cruza = True
             h = Horario(
                 empleado_id=emp.id,
                 dia_semana=h_data['dia_semana'],
-                hora_entrada=datetime.strptime(h_data['hora_entrada'], '%H:%M').time() if h_data.get('hora_entrada') else None,
-                hora_salida=datetime.strptime(h_data['hora_salida'], '%H:%M').time() if h_data.get('hora_salida') else None
+                hora_entrada=hora_e,
+                hora_salida=hora_s,
+                cruza_medianoche=cruza
             )
             db.session.add(h)
 
@@ -82,11 +91,20 @@ def update_empleado(id):
         # Borrar horarios viejos y recrear
         Horario.query.filter_by(empleado_id=emp.id).delete()
         for h_data in data['horarios']:
+            he = h_data.get('hora_entrada') or ''
+            hs = h_data.get('hora_salida') or ''
+            hora_e = datetime.strptime(he, '%H:%M:%S').time() if len(he) > 5 else (datetime.strptime(he, '%H:%M').time() if he else None)
+            hora_s = datetime.strptime(hs, '%H:%M:%S').time() if len(hs) > 5 else (datetime.strptime(hs, '%H:%M').time() if hs else None)
+            # Auto-detect cruza_medianoche
+            cruza = h_data.get('cruza_medianoche', False)
+            if hora_e and hora_s and hora_s < hora_e:
+                cruza = True
             h = Horario(
                 empleado_id=emp.id,
                 dia_semana=h_data['dia_semana'],
-                hora_entrada=datetime.strptime(h_data['hora_entrada'], '%H:%M:%S').time() if len(h_data.get('hora_entrada','')) > 5 else (datetime.strptime(h_data['hora_entrada'], '%H:%M').time() if h_data.get('hora_entrada') else None),
-                hora_salida=datetime.strptime(h_data['hora_salida'], '%H:%M:%S').time() if len(h_data.get('hora_salida','')) > 5 else (datetime.strptime(h_data['hora_salida'], '%H:%M').time() if h_data.get('hora_salida') else None)
+                hora_entrada=hora_e,
+                hora_salida=hora_s,
+                cruza_medianoche=cruza
             )
             db.session.add(h)
 

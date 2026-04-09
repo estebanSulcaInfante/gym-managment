@@ -69,18 +69,24 @@ def get_dashboard_stats():
     # Precargar horarios de hoy para evitar N+1 queries
     from app.models import Horario
     horarios_hoy = Horario.query.filter_by(dia_semana=hoy.weekday()).all()
-    horario_map = {h.empleado_id: h for h in horarios_hoy}
+    
+    # Agrupar bloques por empleado (un empleado puede tener N bloques)
+    from collections import defaultdict
+    bloques_por_emp = defaultdict(list)
+    for h in horarios_hoy:
+        if h.hora_entrada:
+            bloques_por_emp[h.empleado_id].append(h)
 
     ids_presentes = {a.empleado_id for a in asistencias_hoy}
     for emp in empleados_activos:
-        if emp.id not in ids_presentes:
-            horario_hoy = horario_map.get(emp.id)
-            if horario_hoy and horario_hoy.hora_entrada:
-                alertas.append({
-                    'tipo': 'ausencia',
-                    'titulo': 'Ausencia sin notificar',
-                    'mensaje': f"{emp.nombre} {emp.apellido} no ha registrado entrada (Turno {str(horario_hoy.hora_entrada)[:5]}).",
-                })
+        bloques_emp = bloques_por_emp.get(emp.id, [])
+        if bloques_emp and emp.id not in ids_presentes:
+            primer_bloque = min(bloques_emp, key=lambda b: b.hora_entrada)
+            alertas.append({
+                'tipo': 'ausencia',
+                'titulo': 'Ausencia sin notificar',
+                'mensaje': f"{emp.nombre} {emp.apellido} no ha registrado entrada (Turno {str(primer_bloque.hora_entrada)[:5]}).",
+            })
     
     # Hito de puntualidad
     if puntualidad_promedio >= 90:

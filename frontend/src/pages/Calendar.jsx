@@ -62,7 +62,7 @@ export default function Calendar() {
   const sel = selectedDay ? getDayData(selectedDay) : null;
 
   return (
-    <div className="p-8 pb-20">
+    <div className="p-4 md:p-8 pb-20">
       {/* Header */}
       <div className="mb-8">
         <span className="text-primary font-bold text-xs uppercase tracking-widest">Vista Mensual</span>
@@ -103,7 +103,7 @@ export default function Calendar() {
                   <div key={wi} className="grid grid-cols-7 divide-x divide-slate-50">
                     {week.map((day, di) => {
                       if (day === null || day === undefined) {
-                        return <div key={di} className="min-h-[90px] bg-slate-50/30"></div>;
+                        return <div key={di} className="min-h-[70px] md:min-h-[90px] bg-slate-50/30"></div>;
                       }
                       const dd = getDayData(day);
                       const isToday = dd?.es_hoy;
@@ -116,7 +116,7 @@ export default function Calendar() {
                           key={di}
                           onClick={() => setSelectedDay(day === selectedDay ? null : day)}
                           className={clsx(
-                            "min-h-[90px] p-2 text-left transition-all relative group",
+                            "min-h-[70px] md:min-h-[90px] p-1.5 md:p-2 text-left transition-all relative group",
                             isFuture && "opacity-40",
                             isSelected && "ring-2 ring-primary ring-inset bg-primary/5",
                             !isSelected && "hover:bg-slate-50"
@@ -146,7 +146,7 @@ export default function Calendar() {
                     })}
                     {/* Fill remaining cells if week is short */}
                     {Array.from({ length: 7 - week.length }).map((_, i) => (
-                      <div key={`fill-${i}`} className="min-h-[90px] bg-slate-50/30"></div>
+                      <div key={`fill-${i}`} className="min-h-[70px] md:min-h-[90px] bg-slate-50/30"></div>
                     ))}
                   </div>
                 ))}

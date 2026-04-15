@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -14,11 +15,22 @@ import StaffManagement from './pages/StaffManagement';
 import EmployeeDetail from './pages/EmployeeDetail';
 
 function Layout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-surface">
-      <TopBar />
-      <Sidebar />
-      <div className="md:pl-64 pt-16 h-full min-h-screen">
+    <div className="min-h-screen">
+      <TopBar onMenuToggle={() => setSidebarOpen(o => !o)} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <div className="pt-16 md:pl-64 min-h-screen">
         {children}
       </div>
     </div>

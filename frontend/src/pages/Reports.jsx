@@ -157,30 +157,30 @@ export default function Reports() {
   };
 
   return (
-    <div className="p-8 pb-20 print:p-4">
+    <div className="p-4 md:p-8 pb-20 print:p-4">
       {/* ─── Header ─── */}
-      <div className="mb-10 flex justify-between items-end print:mb-4">
+      <div className="mb-8 md:mb-10 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 print:mb-4">
         <div>
           <span className="text-primary font-bold text-xs uppercase tracking-widest print:hidden">Métricas de Rendimiento</span>
-          <h2 className="text-3xl font-extrabold font-headline text-slate-800 mt-1">Reportes de Asistencia</h2>
+          <h2 className="text-2xl md:text-3xl font-extrabold font-headline text-slate-800 mt-1">Reportes de Asistencia</h2>
           <p className="text-slate-500 mt-2 print:hidden">Monitoreo de puntualidad y horas efectivas del personal.</p>
         </div>
-        <div className="flex space-x-3 print:hidden">
-          <button onClick={handleCerrarDia} className="flex items-center px-4 py-2 bg-amber-50 text-amber-700 font-semibold text-sm rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors">
-            <span className="material-symbols-outlined mr-2 text-lg">fact_check</span>Conciliar Pendientes
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <button onClick={handleCerrarDia} className="flex items-center px-3 md:px-4 py-2 bg-amber-50 text-amber-700 font-semibold text-sm rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors">
+            <span className="material-symbols-outlined mr-1.5 text-lg">fact_check</span><span className="hidden sm:inline">Conciliar Pendientes</span><span className="sm:hidden">Conciliar</span>
           </button>
-          <button onClick={handleExportCSV} className="flex items-center px-4 py-2 bg-white text-slate-700 font-semibold text-sm rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
-            <span className="material-symbols-outlined mr-2 text-lg">download</span>CSV
+          <button onClick={handleExportCSV} className="flex items-center px-3 md:px-4 py-2 bg-white text-slate-700 font-semibold text-sm rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
+            <span className="material-symbols-outlined mr-1.5 text-lg">download</span>CSV
           </button>
-          <button onClick={handleExportPDF} className="flex items-center px-4 py-2 bg-primary text-white font-semibold text-sm rounded-lg shadow-md shadow-primary/20 hover:bg-primary-container transition-colors">
-            <span className="material-symbols-outlined mr-2 text-lg">print</span>PDF
+          <button onClick={handleExportPDF} className="flex items-center px-3 md:px-4 py-2 bg-primary text-white font-semibold text-sm rounded-lg shadow-md shadow-primary/20 hover:bg-primary-container transition-colors">
+            <span className="material-symbols-outlined mr-1.5 text-lg">print</span>PDF
           </button>
         </div>
       </div>
 
       {/* ─── KPI Cards ─── */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 print:grid-cols-4 print:gap-2 print:mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8 print:grid-cols-4 print:gap-2 print:mb-4">
           {[
             { icon: 'timer', color: 'blue', label: 'Promedio Puntualidad', value: `${stats.puntualidad_promedio}%` },
             { icon: 'groups', color: 'purple', label: 'Total Staff Activo', value: stats.total_empleados },
@@ -200,7 +200,7 @@ export default function Reports() {
 
       {/* ─── Filter Bar ─── */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mb-8 print:hidden">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre</label>
             <div className="relative">

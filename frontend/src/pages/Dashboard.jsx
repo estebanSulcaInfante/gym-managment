@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,7 +8,7 @@ export default function Dashboard() {
   const [pendientes, setPendientes] = useState(0);
   const [loading, setLoading] = useState(true);
   const [conciliando, setConciliando] = useState(false);
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const fetchData = async () => {
     setLoading(true);
@@ -49,15 +49,9 @@ export default function Dashboard() {
   if (loading || !stats) return <div className="p-8 text-center text-slate-500">Cargando métricas...</div>;
 
   const statusColor = (estado) => {
-    if (estado === 'puntual') return 'bg-emerald-500';
-    if (estado === 'retraso') return 'bg-orange-500';
-    return 'bg-slate-400';
-  };
-
-  const statusLabel = (estado) => {
-    if (estado === 'puntual') return 'text-emerald-700';
-    if (estado === 'retraso') return 'text-orange-700';
-    return 'text-slate-500';
+    if (estado === 'puntual') return 'text-emerald-500 border-emerald-500 bg-emerald-500';
+    if (estado === 'retraso') return 'text-warning border-warning bg-warning';
+    return 'text-slate-400 border-slate-400 bg-slate-400';
   };
 
   const alertIcon = (tipo) => {
@@ -67,152 +61,201 @@ export default function Dashboard() {
   };
 
   const alertBg = (tipo) => {
-    if (tipo === 'ausencia') return 'bg-orange-50 text-orange-900 border-orange-200';
-    if (tipo === 'hito') return 'bg-blue-50 text-blue-900 border-blue-200';
-    return 'bg-slate-50 text-slate-700 border-slate-200';
+    if (tipo === 'ausencia') return 'bg-white border-l-4 border-l-warning text-on-surface shadow-sm';
+    if (tipo === 'hito') return 'bg-white border-l-4 border-l-success text-on-surface shadow-sm';
+    return 'bg-white border-l-4 border-l-slate-400 text-on-surface shadow-sm';
+  };
+
+  // Determine current time of day for greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Buenos días';
+    if (hour < 19) return 'Buenas tardes';
+    return 'Buenas noches';
   };
 
   return (
-    <div className="p-8 pb-20">
-      {/* Action Banner para Pendientes */}
+    <div className="p-4 md:p-8 pb-20 pt-24 md:pt-8 min-h-screen">
+      
+      {/* Header Empeático */}
+      <header className="mb-8 border-b border-outline-variant pb-6">
+        <h2 className="text-3xl font-black font-headline text-on-surface tracking-tighter">
+          {getGreeting()}, {user?.username?.split(' ')[0] || 'Responsable'}
+        </h2>
+        <p className="text-on-surface-variant mt-1 font-semibold">El Templo del Hierro está operando con normalidad.</p>
+      </header>
+
+      {/* Action Banner para Pendientes - Rediseñado para no generar ansiedad visual */}
       {isAdmin && pendientes > 0 && (
-        <div className="mb-8 bg-error/10 border border-error/20 rounded-xl p-4 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3 text-error">
-            <span className="material-symbols-outlined text-2xl" style={{fontVariationSettings: "'FILL' 1"}}>warning</span>
+        <div className="mb-8 bg-surface-dark border border-surface-dark rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 shadow-lg relative overflow-hidden group">
+          <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+          <div className="flex items-center gap-4 text-white z-10">
+            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-3xl text-primary" style={{fontVariationSettings: "'FILL' 1"}}>task_alt</span>
+            </div>
             <div>
-              <p className="font-bold text-sm">Conciliación Pendiente</p>
-              <p className="text-xs opacity-90 mt-0.5">
-                Existen {pendientes} registros pendientes de días pasados (salidas omitidas o ausencias no marcadas).
+              <p className="font-bold text-lg">Conciliación Pendiente</p>
+              <p className="text-sm text-on-surface-dark-variant mt-0.5">
+                Existen {pendientes} registros pendientes de actualización.
               </p>
             </div>
           </div>
           <button
             onClick={handleConciliar}
             disabled={conciliando}
-            className="shrink-0 bg-error hover:bg-error/90 text-white text-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-lg shadow-md transition-all disabled:opacity-50"
+            className="shrink-0 z-10 bg-primary hover:bg-primary-container text-on-primary text-sm font-black uppercase tracking-wider py-3 px-6 rounded-xl shadow-[0_4px_14px_rgba(250,204,21,0.4)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 w-full sm:w-auto flex items-center justify-center gap-2"
           >
-            {conciliando ? 'Conciliando...' : 'Conciliar Ahora'}
+            {conciliando && (
+              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-on-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            )}
+            {conciliando ? 'Procesando...' : 'Completar Tarea'}
           </button>
         </div>
       )}
 
-      {/* Header */}
-      <header className="mb-10">
-        <h2 className="text-3xl font-extrabold font-headline text-slate-800 tracking-tight">Dashboard de Asistencia</h2>
-        <p className="text-slate-500 mt-1">Resumen de actividad operativa en tiempo real.</p>
-      </header>
-
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-10">
         {/* Presencia Actual */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative overflow-hidden group">
+        <div className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant relative overflow-hidden group transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 cursor-default">
           <div className="relative z-10">
-            <span className="text-[11px] font-bold text-slate-500 tracking-[0.15em] uppercase">Presencia Actual</span>
-            <p className="text-5xl font-bold font-headline text-primary py-2">{stats.presencia_actual}%</p>
-            <div className="flex items-center gap-2 text-primary font-bold text-xs">
-              <span className="material-symbols-outlined text-sm">trending_up</span>
+            <span className="text-[10px] items-center gap-1 flex font-black text-on-surface-variant tracking-[0.2em] uppercase">
+              <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
+              Presencia Actual
+            </span>
+            <p className="text-6xl font-black font-headline text-on-surface py-2 tracking-tighter">{stats.presencia_actual}%</p>
+            <div className="flex items-center gap-2 text-on-surface-variant font-bold text-xs uppercase tracking-wider">
               <span>{stats.asistencias_hoy}/{stats.total_empleados} presentes</span>
             </div>
           </div>
-          <div className="absolute -right-4 -bottom-4 opacity-[0.04] group-hover:scale-110 transition-transform duration-500">
-            <span className="material-symbols-outlined text-[120px]">groups</span>
+          <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 group-hover:opacity-[0.06] transition-all duration-500">
+            <span className="material-symbols-outlined text-[130px]">groups</span>
           </div>
         </div>
 
         {/* Staff Activo */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative overflow-hidden group">
+        <div className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant relative overflow-hidden group transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 cursor-default">
           <div className="relative z-10">
-            <span className="text-[11px] font-bold text-slate-500 tracking-[0.15em] uppercase">Staff Activo</span>
-            <p className="text-5xl font-bold font-headline text-slate-800 py-2">
-              {stats.trabajando_ahora}<span className="text-2xl text-slate-400">/{stats.total_empleados}</span>
+            <span className="text-[10px] font-black items-center gap-1 flex text-on-surface-variant tracking-[0.2em] uppercase">
+             <span className="w-2 h-2 rounded-full bg-surface-dark inline-block"></span>
+             Staff Activo
+            </span>
+            <p className="text-6xl font-black font-headline text-on-surface py-2 tracking-tighter">
+              {stats.trabajando_ahora}
             </p>
-            <div className="flex items-center gap-2 text-slate-500 font-bold text-xs">
+            <div className="flex items-center gap-1.5 text-on-surface-variant font-bold text-xs uppercase tracking-wider">
               <span className="material-symbols-outlined text-sm">schedule</span>
               <span>Trabajando ahora</span>
             </div>
           </div>
-          <div className="absolute -right-4 -bottom-4 opacity-[0.04] group-hover:scale-110 transition-transform duration-500">
-            <span className="material-symbols-outlined text-[120px]">badge</span>
+          <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 group-hover:opacity-[0.06] transition-all duration-500">
+            <span className="material-symbols-outlined text-[130px]">badge</span>
           </div>
         </div>
 
         {/* Retrasos Hoy */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-b-4 border-b-orange-500 relative overflow-hidden group">
+        <div className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant relative overflow-hidden group transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 cursor-default">
+          <div className="absolute top-0 left-0 w-full h-1 bg-warning"></div>
           <div className="relative z-10">
-            <span className="text-[11px] font-bold text-orange-600 tracking-[0.15em] uppercase">Retrasos Hoy</span>
-            <p className="text-5xl font-bold font-headline text-orange-600 py-2">{String(stats.retrasos_hoy).padStart(2, '0')}</p>
-            <div className="flex items-center gap-2 text-orange-600 font-bold text-xs">
-              <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>warning</span>
+            <span className="text-[10px] items-center gap-1 flex font-black text-warning tracking-[0.2em] uppercase">
+              <span className="material-symbols-outlined text-[12px]" style={{fontVariationSettings: "'FILL' 1"}}>warning</span>
+              Retrasos Hoy
+            </span>
+            <p className="text-6xl font-black font-headline text-on-surface py-2 tracking-tighter">
+              {String(stats.retrasos_hoy).padStart(2, '0')}
+            </p>
+            <div className="flex items-center gap-1.5 text-on-surface-variant font-bold text-xs uppercase tracking-wider">
               <span>{stats.retrasos_hoy > 0 ? 'Acción requerida' : 'Todo en orden'}</span>
             </div>
           </div>
-          <div className="absolute -right-4 -bottom-4 opacity-[0.04] group-hover:scale-110 transition-transform duration-500">
-            <span className="material-symbols-outlined text-[120px] text-orange-600">timer_off</span>
+          <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 group-hover:opacity-[0.06] transition-all duration-500">
+            <span className="material-symbols-outlined text-[130px]">timer_off</span>
           </div>
         </div>
       </div>
 
       {/* Main Grid: Chart + Staff en Turno */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+        
         {/* Chart */}
-        <div className="lg:col-span-8 bg-white p-8 rounded-xl shadow-sm border border-slate-100">
-          <div className="flex justify-between items-end mb-8">
+        <div className="lg:col-span-8 bg-surface p-8 rounded-2xl shadow-sm border border-outline-variant relative overflow-hidden">
+          <div className="flex justify-between items-end mb-8 relative z-10">
             <div>
-              <h3 className="text-xl font-bold font-headline text-slate-800">Tendencia Semanal</h3>
-              <p className="text-sm text-slate-400">Asistencias de los últimos 7 días</p>
+              <h3 className="text-2xl font-black font-headline text-on-surface tracking-tight">Tendencia Semanal</h3>
+              <p className="text-sm text-on-surface-variant font-semibold">Resumen de asistencias los últimos 7 días</p>
             </div>
-            <div className="flex gap-2">
-              <span className="w-8 h-1 bg-primary rounded-full"></span>
-              <span className="w-4 h-1 bg-slate-300 rounded-full"></span>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-surface-dark rounded-sm"></span>
+                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Total</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-primary rounded-sm"></span>
+                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Puntuales</span>
+              </div>
             </div>
           </div>
-          <div className="h-[280px] w-full">
+          <div className="h-[300px] w-full relative z-10">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.chart_data} barGap={4}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dx={-10} allowDecimals={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 12, fontWeight: 700 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 12, fontWeight: 600 }} dx={-10} allowDecimals={false} />
                 <Tooltip
                   cursor={{ fill: '#f1f5f9' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgb(0 0 0 / 0.08)', fontWeight: 600 }}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 8px 24px rgb(0 0 0 / 0.08)', fontWeight: 600 }}
                 />
-                <Bar dataKey="asistencias" name="Total" fill="#0058bc" radius={[6, 6, 0, 0]} barSize={28} />
-                <Bar dataKey="puntuales" name="Puntuales" fill="#bfdbfe" radius={[6, 6, 0, 0]} barSize={28} />
+                <Bar dataKey="asistencias" name="Total" fill="#09090b" radius={[4, 4, 0, 0]} barSize={24} />
+                <Bar dataKey="puntuales" name="Puntuales" fill="#facc15" radius={[4, 4, 0, 0]} barSize={24} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Staff en Turno */}
-        <div className="lg:col-span-4 bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-headline font-bold text-slate-800">Staff en Turno</h3>
-            <span className="bg-blue-50 text-primary px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">En vivo</span>
-          </div>
-          <div className="space-y-3 flex-1 overflow-y-auto max-h-[280px]">
-            {stats.staff_en_turno.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-8">Nadie ha marcado entrada hoy.</p>
-            ) : (
-              stats.staff_en_turno.map((s) => (
-                <div key={s.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-sm font-headline">
-                      {s.nombre.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-800">{s.nombre}</p>
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-tight">{s.cargo}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${statusColor(s.estado)} ${s.trabajando ? 'animate-pulse' : ''}`}></span>
-                    <span className={`text-[10px] font-bold uppercase ${statusLabel(s.estado)}`}>
-                      {s.trabajando ? 'Activo' : s.estado}
-                    </span>
-                  </div>
+        {/* Staff en Turno (Insight Widget) */}
+        <div className="lg:col-span-4 bg-kinetic-gradient p-1 rounded-2xl shadow-xl flex flex-col relative overflow-hidden">
+          {/* Inner content wrapper to allow gradient border effect if wanted, or just dark background */}
+          <div className="bg-surface-dark w-full h-full rounded-[14px] p-6 flex flex-col relative z-10">
+            {/* Glow effect */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[50px] pointer-events-none"></div>
+
+            <div className="flex justify-between items-center mb-6 relative z-10">
+              <h3 className="font-headline font-black text-white text-xl tracking-tight">Staff en Turno</h3>
+              <span className="bg-primary text-on-primary px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(250,204,21,0.3)] animate-pulse">
+                 En vivo
+              </span>
+            </div>
+            
+            <div className="space-y-4 flex-1 overflow-y-auto max-h-[300px] custom-scrollbar pr-2 relative z-10">
+              {stats.staff_en_turno.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full opacity-50 py-10">
+                  <span className="material-symbols-outlined text-4xl text-on-surface-dark-variant mb-2">hotel</span>
+                  <p className="text-sm font-bold text-on-surface-dark-variant text-center">Sin staff activo ahora mismo.</p>
                 </div>
-              ))
-            )}
+              ) : (
+                stats.staff_en_turno.map((s) => (
+                  <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                    <div className="flex items-center gap-3">
+                      {/* Status Ring Avatar */}
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center font-black text-on-primary text-sm font-headline shrink-0 border-2 ${statusColor(s.estado)} shadow-[0_0_10px_rgba(0,0,0,0.5)]`}>
+                        {s.nombre.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-white truncate">{s.nombre}</p>
+                        <p className="text-[10px] text-on-surface-dark-variant font-bold uppercase tracking-wider truncate">{s.cargo}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end shrink-0 pl-2">
+                       <span className={`text-[10px] font-black uppercase tracking-wider ${s.estado === 'retraso'? 'text-warning' : 'text-emerald-400'}`}>
+                        {s.estado}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -220,16 +263,16 @@ export default function Dashboard() {
       {/* Alertas del Día */}
       {stats.alertas && stats.alertas.length > 0 && (
         <section>
-          <h3 className="text-xl font-bold font-headline text-slate-800 mb-6">Alertas del Día</h3>
+          <h3 className="text-xl font-black font-headline text-on-surface mb-6 tracking-tight">Alertas del Día</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {stats.alertas.map((alerta, idx) => (
-              <div key={idx} className={`p-5 rounded-xl flex gap-4 items-start border ${alertBg(alerta.tipo)}`}>
+              <div key={idx} className={`p-5 rounded-xl flex gap-4 items-start ${alertBg(alerta.tipo)}`}>
                 <span className="material-symbols-outlined mt-0.5" style={{fontVariationSettings: "'FILL' 1"}}>
                   {alertIcon(alerta.tipo)}
                 </span>
                 <div>
                   <p className="font-bold text-sm">{alerta.titulo}</p>
-                  <p className="text-xs opacity-80 mt-1">{alerta.mensaje}</p>
+                  <p className="text-xs text-on-surface-variant font-medium mt-1">{alerta.mensaje}</p>
                 </div>
               </div>
             ))}
@@ -239,22 +282,17 @@ export default function Dashboard() {
 
       {/* Monthly Summary Bar */}
       <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Puntualidad Mes</p>
-          <p className="text-2xl font-bold font-headline text-primary">{stats.puntualidad_promedio}%</p>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Retrasos Mes</p>
-          <p className="text-2xl font-bold font-headline text-orange-600">{stats.retrasos_mes}</p>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Horas Totales</p>
-          <p className="text-2xl font-bold font-headline text-slate-800">{stats.horas_totales_mes}h</p>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Empleados</p>
-          <p className="text-2xl font-bold font-headline text-slate-800">{stats.total_empleados}</p>
-        </div>
+        {[
+          { label: "Puntualidad Mes", value: `${stats.puntualidad_promedio}%`, color: "text-on-surface" },
+          { label: "Retrasos Mes", value: stats.retrasos_mes, color: "text-warning" },
+          { label: "Horas Totales", value: `${stats.horas_totales_mes}h`, color: "text-on-surface" },
+          { label: "Empleados", value: stats.total_empleados, color: "text-on-surface" }
+        ].map((item, idx) => (
+          <div key={idx} className="bg-surface rounded-xl p-5 text-center border border-outline-variant shadow-sm hover:border-outline transition-colors">
+            <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.15em] mb-1">{item.label}</p>
+            <p className={`text-3xl font-black font-headline ${item.color}`}>{item.value}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Dialog } from '@headlessui/react';
+import React, { useState, Fragment } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
 
 export default function EmployeeModal({ isOpen, onClose, onSubmit, employee }) {
   const isEditing = !!employee;
@@ -85,14 +85,35 @@ export default function EmployeeModal({ isOpen, onClose, onSubmit, employee }) {
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-3xl rounded-2xl bg-white p-6 shadow-xl w-full max-h-[90vh] overflow-y-auto">
-          <Dialog.Title className="text-xl font-bold mb-4">
-            {isEditing ? 'Editar Empleado' : 'Agregar Empleado'}
-          </Dialog.Title>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <Transition show={isOpen} as={Fragment}>
+      <Dialog onClose={onClose} className="relative z-50">
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
+        </Transition.Child>
+
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0 scale-95 translate-y-4"
+            enterTo="opacity-100 scale-100 translate-y-0"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100 scale-100 translate-y-0"
+            leaveTo="opacity-0 scale-95 translate-y-4"
+          >
+            <Dialog.Panel className="mx-auto max-w-3xl rounded-2xl bg-white p-6 shadow-xl w-full max-h-[90vh] overflow-y-auto">
+              <Dialog.Title className="text-xl font-black text-slate-800 mb-4 tracking-tight">
+                {isEditing ? 'Editar Empleado' : 'Agregar Empleado'}
+              </Dialog.Title>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700">Nombre *</label>
@@ -229,23 +250,25 @@ export default function EmployeeModal({ isOpen, onClose, onSubmit, employee }) {
             </div>
 
             <div className="mt-4 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-container focus:outline-none"
-              >
-                {isEditing ? 'Guardar' : 'Crear'}
-              </button>
-            </div>
-          </form>
-        </Dialog.Panel>
-      </div>
-    </Dialog>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors active:scale-[0.98] outline-none"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-on-primary shadow-sm hover:bg-primary-container transition-all active:scale-[0.98] outline-none"
+                >
+                  {isEditing ? 'Guardar Cambios' : 'Crear Empleado'}
+                </button>
+              </div>
+            </form>
+          </Dialog.Panel>
+          </Transition.Child>
+        </div>
+      </Dialog>
+    </Transition>
   );
 }

@@ -1,18 +1,36 @@
-export default function TopBar() {
+export default function TopBar({ onMenuToggle }) {
   return (
-    <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-[0_8px_24px_rgba(25,28,29,0.06)]">
-      <div className="flex justify-between items-center px-6 h-16 w-full">
-        {/* Empty space for mobile menu toggle or branding if needed when sidebar collapses */}
-        <div className="flex items-center space-x-4 pl-64 hidden md:flex">
-          <span className="font-headline font-black tracking-tighter text-2xl text-blue-700">SPORT GYM</span>
+    <header className="fixed top-0 w-full z-40 bg-surface/90 backdrop-blur-md border-b border-surface-container">
+      <div className="flex items-center px-4 h-16 w-full gap-3">
+
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onMenuToggle}
+          className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl text-on-surface hover:bg-surface-container transition-colors shrink-0"
+          aria-label="Abrir menú"
+        >
+          <span className="material-symbols-outlined text-2xl">menu</span>
+        </button>
+
+        {/* Brand — mobile only (because desktop has sidebar branding) */}
+        <div className="md:hidden flex items-center justify-center">
+          <img src="/logo.svg" alt="Sport Gym" className="h-10 w-auto" />
         </div>
 
+        {/* Context Title — desktop */}
+        <div className="hidden md:flex items-center pl-64">
+          <span className="font-headline font-bold text-slate-800 text-lg uppercase tracking-wide">
+            Administración Central
+          </span>
+        </div>
+
+        {/* Actions pushed to the right */}
         <div className="flex items-center gap-4 ml-auto">
-          <span className="material-symbols-outlined text-slate-500 hover:text-blue-600 cursor-pointer transition-colors duration-200">account_circle</span>
-          <span className="material-symbols-outlined text-slate-500 hover:text-blue-600 cursor-pointer transition-colors duration-200">settings</span>
+          <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container text-slate-500 hover:text-primary transition-all">
+            <span className="material-symbols-outlined">notifications</span>
+          </button>
         </div>
       </div>
-      <div className="bg-slate-100 h-[1px] w-full"></div>
     </header>
   );
 }

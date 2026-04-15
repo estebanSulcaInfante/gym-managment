@@ -22,6 +22,7 @@
 - [[ADR 001 - Tech Stack]] — Migración a Supabase + JWT
 - [[ADR 002 - Metodo Check-in]] — DNI manual + webcam
 - [[ADR 003 - Seguridad y Autenticacion]] — Sistema de tokens stateless
+- [[ADR 004 - UIRedesign]] — Arquitectura de Empatía, Modo Claro/Oscuro y transiciones "Tacto Físico"
 
 ## 📅 Diario
 

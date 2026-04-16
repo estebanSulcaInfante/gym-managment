@@ -64,10 +64,11 @@ def get_dashboard_stats():
                 'hora_entrada': str(a.hora_entrada)[:5] if a.hora_entrada else None
             })
 
-    # --- Alertas del día ---
+    # --- Alertas del día (derivación lazy de inasistencias) ---
     alertas = []
     # Precargar horarios de hoy para evitar N+1 queries
     from app.models import Horario
+    ahora_time = datetime.now(LIMATZ).time()
     horarios_hoy = Horario.query.filter_by(dia_semana=hoy.weekday()).all()
     
     # Agrupar bloques por empleado (un empleado puede tener N bloques)
@@ -77,16 +78,34 @@ def get_dashboard_stats():
         if h.hora_entrada:
             bloques_por_emp[h.empleado_id].append(h)
 
+    # Variables previas
     ids_presentes = {a.empleado_id for a in asistencias_hoy}
+    
+    # Obtener IDs de empleados que tienen AL MENOS un registro en el sistema (Opción A)
+    empleados_con_historial = db.session.query(Asistencia.empleado_id).distinct().all()
+    ids_con_historial = {r[0] for r in empleados_con_historial}
+
     for emp in empleados_activos:
+        # Opción A: Cold Start Protection
+        # Solo considerar empleados si ya tienen al menos un registro histórico en el sistema.
+        # Esto evita inasistencias fantasma antes de que empiecen a usar el sistema.
+        if emp.id not in ids_con_historial:
+            continue
+            
         bloques_emp = bloques_por_emp.get(emp.id, [])
         if bloques_emp and emp.id not in ids_presentes:
-            primer_bloque = min(bloques_emp, key=lambda b: b.hora_entrada)
-            alertas.append({
-                'tipo': 'ausencia',
-                'titulo': 'Ausencia sin notificar',
-                'mensaje': f"{emp.nombre} {emp.apellido} no ha registrado entrada (Turno {str(primer_bloque.hora_entrada)[:5]}).",
-            })
+            # Solo alertar si al menos un bloque ya debería haber empezado (hora_entrada + 15 min)
+            bloques_vencidos = [
+                b for b in bloques_emp
+                if (b.hora_entrada.hour * 60 + b.hora_entrada.minute + 15) <= (ahora_time.hour * 60 + ahora_time.minute)
+            ]
+            if bloques_vencidos:
+                primer_bloque = min(bloques_vencidos, key=lambda b: b.hora_entrada)
+                alertas.append({
+                    'tipo': 'ausencia',
+                    'titulo': 'Ausencia sin notificar',
+                    'mensaje': f"{emp.nombre} {emp.apellido} no ha registrado entrada (Turno {str(primer_bloque.hora_entrada)[:5]}).",
+                })
     
     # Hito de puntualidad
     if puntualidad_promedio >= 90:

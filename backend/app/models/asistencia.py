@@ -7,7 +7,7 @@ class Asistencia(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'), nullable=False)
     fecha = db.Column(db.Date, nullable=False)  # Fecha en que INICIÓ la jornada
-    horario_id = db.Column(db.Integer, db.ForeignKey('horarios_empleados.id'), nullable=True)
+    horario_id = db.Column(db.Integer, db.ForeignKey('horarios_empleados.id', ondelete='SET NULL'), nullable=True)
     # FK relacional: vincula esta asistencia al bloque programado que le corresponde
     # nullable: "fuera de turno" no tiene horario asociado
 

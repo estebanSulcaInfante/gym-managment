@@ -5,9 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
-  const [pendientes, setPendientes] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [conciliando, setConciliando] = useState(false);
   const { user, isAdmin } = useAuth();
 
   const fetchData = async () => {
@@ -15,11 +13,6 @@ export default function Dashboard() {
     try {
       const res = await api.get('/stats/dashboard');
       setStats(res.data);
-      
-      if (isAdmin) {
-        const pendRes = await api.get('/asistencias/pendientes');
-        setPendientes(pendRes.data.total || 0);
-      }
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
     } finally {
@@ -30,21 +23,6 @@ export default function Dashboard() {
   useEffect(() => {
     fetchData();
   }, [isAdmin]);
-
-  const handleConciliar = async () => {
-    if (!window.confirm('¿Conciliar datos de los últimos 7 días? Esto cerrará sesiones abiertas y marcará ausencias.')) return;
-    
-    setConciliando(true);
-    try {
-      await api.post('/asistencias/conciliar');
-      await fetchData(); // refrescar
-    } catch (err) {
-      console.error('Error conciliando', err);
-      alert('Hubo un error al conciliar.');
-    } finally {
-      setConciliando(false);
-    }
-  };
 
   if (loading || !stats) return <div className="p-8 text-center text-slate-500">Cargando métricas...</div>;
 
@@ -84,37 +62,6 @@ export default function Dashboard() {
         </h2>
         <p className="text-on-surface-variant mt-1 font-semibold">El Templo del Hierro está operando con normalidad.</p>
       </header>
-
-      {/* Action Banner para Pendientes - Rediseñado para no generar ansiedad visual */}
-      {isAdmin && pendientes > 0 && (
-        <div className="mb-8 bg-surface-dark border border-surface-dark rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 shadow-lg relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-          <div className="flex items-center gap-4 text-white z-10">
-            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-3xl text-primary" style={{fontVariationSettings: "'FILL' 1"}}>task_alt</span>
-            </div>
-            <div>
-              <p className="font-bold text-lg">Conciliación Pendiente</p>
-              <p className="text-sm text-on-surface-dark-variant mt-0.5">
-                Existen {pendientes} registros pendientes de actualización.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleConciliar}
-            disabled={conciliando}
-            className="shrink-0 z-10 bg-primary hover:bg-primary-container text-on-primary text-sm font-black uppercase tracking-wider py-3 px-6 rounded-xl shadow-[0_4px_14px_rgba(250,204,21,0.4)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 w-full sm:w-auto flex items-center justify-center gap-2"
-          >
-            {conciliando && (
-              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-on-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            )}
-            {conciliando ? 'Procesando...' : 'Completar Tarea'}
-          </button>
-        </div>
-      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-10">

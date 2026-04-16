@@ -34,13 +34,14 @@ def create_empleado():
     if not data or not 'dni' in data or not 'nombre' in data:
         return jsonify({'error': 'DNI and nombre are required'}), 400
     
-    if Empleado.query.filter_by(dni=data['dni']).first():
+    dni = data['dni'].strip()
+    if Empleado.query.filter_by(dni=dni).first():
         return jsonify({'error': 'DNI ya registrado'}), 400
 
     emp = Empleado(
         nombre=data['nombre'],
         apellido=data.get('apellido', ''),
-        dni=data['dni'],
+        dni=dni,
         cargo=data.get('cargo', 'Staff'),
         departamento=data.get('departamento', 'General'),
         telefono=data.get('telefono'),

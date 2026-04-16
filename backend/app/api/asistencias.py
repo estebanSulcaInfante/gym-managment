@@ -41,13 +41,13 @@ def encontrar_bloque_actual(bloques, hora_actual):
         curr_min = hora_actual.hour * 60 + hora_actual.minute
 
         # Ventana de entrada: 30 min antes de hora_entrada hasta hora_salida
-        ventana_inicio = ent_min - 30
+        ventana_inicio = (ent_min - 30) % 1440  # Normalizar para evitar negativos
 
         if bloque.cruza_medianoche:
             # Turno nocturno: ventana va de (entrada-30min) hasta medianoche, 
             # o desde medianoche hasta hora_salida del día siguiente
             if curr_min >= ventana_inicio or curr_min <= sal_min:
-                dist = abs(curr_min - ent_min) if curr_min >= ventana_inicio else (1440 - ent_min + curr_min)
+                dist = (curr_min - ent_min) % 1440
                 if dist < menor_distancia:
                     menor_distancia = dist
                     mejor_bloque = bloque
@@ -134,6 +134,9 @@ def editar_asistencia(asist_id):
             asist.hora_salida = None
 
     if 'estado' in data:
+        ESTADOS_VALIDOS = {'puntual', 'retraso', 'ausente', 'fuera de turno', 'revision', 'presente', 'permiso', 'vacaciones'}
+        if data['estado'] not in ESTADOS_VALIDOS:
+            return jsonify({'error': f'Estado inválido. Permitidos: {", ".join(sorted(ESTADOS_VALIDOS))}'}), 400
         asist.estado = data['estado']
 
     if 'justificacion' in data:
@@ -154,157 +157,6 @@ def editar_asistencia(asist_id):
     emp = Empleado.query.get(asist.empleado_id)
     result['empleado_nombre'] = f"{emp.nombre} {emp.apellido}" if emp else ''
     return jsonify(result), 200
-
-
-# ─── Reconciliación de Jornada ───
-@bp.route('/pendientes', methods=['GET'])
-@admin_required
-def obtener_pendientes():
-    """Retorna la cantidad de bloques huérfanos o ausencias no procesadas de los últimos 7 días."""
-    ahora_dt = datetime.now(LIMATZ)
-    hoy = ahora_dt.date()
-    hace_7_dias = hoy - timedelta(days=7)
-
-    # 1. Sesiones abiertas (sin salida, vigentes por más de 14 horas)
-    abiertas_potenciales = Asistencia.query.filter(
-        Asistencia.fecha >= hace_7_dias,
-        Asistencia.hora_salida.is_(None),
-        Asistencia.estado == 'presente'
-    ).all()
-
-    sesiones_abiertas = 0
-    for asist in abiertas_potenciales:
-        dt_entrada = datetime.combine(asist.fecha, asist.hora_entrada).replace(tzinfo=LIMATZ)
-        if ahora_dt > (dt_entrada + timedelta(hours=14)):
-            sesiones_abiertas += 1
-
-    # 2. Ausencias no marcadas: bloques expirados sin asistencia vinculada
-    ausencias_pendientes = 0
-    # Evaluamos hasta HOY inclusive por si un turno de la mañana ya expiró
-    fechas_evaluar = [hace_7_dias + timedelta(days=i) for i in range((hoy - hace_7_dias).days + 1)]
-    
-    for f in fechas_evaluar:
-        bloques_dia = Horario.query.filter_by(dia_semana=f.weekday()).all()
-        bloques_vigentes = [
-            b for b in bloques_dia 
-            if b.hora_entrada and (b.updated_at is None or b.updated_at.date() <= f)
-        ]
-        
-        for bloque in bloques_vigentes:
-            if bloque.cruza_medianoche:
-                dt_salida = datetime.combine(f + timedelta(days=1), bloque.hora_salida).replace(tzinfo=LIMATZ)
-            else:
-                salida = bloque.hora_salida or time(23, 59)
-                dt_salida = datetime.combine(f, salida).replace(tzinfo=LIMATZ)
-                
-            if ahora_dt > dt_salida:
-                existe = Asistencia.query.filter_by(
-                    empleado_id=bloque.empleado_id,
-                    fecha=f,
-                    horario_id=bloque.id
-                ).first()
-                if not existe:
-                    ausencias_pendientes += 1
-
-    return jsonify({
-        'total': sesiones_abiertas + ausencias_pendientes,
-        'detalles': {
-            'sesiones_abiertas': sesiones_abiertas,
-            'ausencias_no_marcadas': ausencias_pendientes
-        }
-    }), 200
-
-
-@bp.route('/conciliar', methods=['POST'])
-@bp.route('/cerrar-dia', methods=['POST'])
-@admin_required
-def conciliar_dias_pasados():
-    """Auto-cierra jornadas pendientes y marca ausencias por bloque programado expirado."""
-    ahora_dt = datetime.now(LIMATZ)
-    hoy = ahora_dt.date()
-    hace_7_dias = hoy - timedelta(days=7)
-
-    sesiones_cerradas = 0
-    ausencias_marcadas = 0
-
-    # 1. Auto-cerrar sesiones abiertas (> 14 horas)
-    abiertas_potenciales = Asistencia.query.filter(
-        Asistencia.fecha >= hace_7_dias,
-        Asistencia.hora_salida.is_(None),
-        Asistencia.estado == 'presente'
-    ).all()
-
-    for asist in abiertas_potenciales:
-        dt_entrada = datetime.combine(asist.fecha, asist.hora_entrada).replace(tzinfo=LIMATZ)
-        if ahora_dt > (dt_entrada + timedelta(hours=14)):
-            asist.estado = 'revision'
-            asist.justificacion = 'auto-cierre por caducidad'
-            
-            # Usar snapshot del horario (inmune a cambios posteriores)
-            if asist.hora_salida_programada:
-                asist.hora_salida = asist.hora_salida_programada
-            else:
-                if asist.horario_id:
-                    horario = Horario.query.get(asist.horario_id)
-                    if horario and horario.hora_salida:
-                        asist.hora_salida = horario.hora_salida
-                if not asist.hora_salida:
-                    dt_ent_temp = datetime.combine(asist.fecha, asist.hora_entrada)
-                    asist.hora_salida = (dt_ent_temp + timedelta(hours=8)).time()
-                
-            asist.horas_totales = calcular_horas(
-                asist.fecha, asist.hora_entrada, asist.hora_salida, asist.cruza_medianoche
-            )
-            sesiones_cerradas += 1
-
-    # 2. Auto-marcar ausencias por bloque programado expirado
-    fechas_evaluar = [hace_7_dias + timedelta(days=i) for i in range((hoy - hace_7_dias).days + 1)]
-    for f in fechas_evaluar:
-        bloques_dia = Horario.query.filter_by(dia_semana=f.weekday()).all()
-        bloques_vigentes = [
-            b for b in bloques_dia
-            if b.hora_entrada and (b.updated_at is None or b.updated_at.date() <= f)
-        ]
-        
-        for bloque in bloques_vigentes:
-            if bloque.cruza_medianoche:
-                dt_salida = datetime.combine(f + timedelta(days=1), bloque.hora_salida).replace(tzinfo=LIMATZ)
-            else:
-                salida = bloque.hora_salida or time(23, 59)
-                dt_salida = datetime.combine(f, salida).replace(tzinfo=LIMATZ)
-
-            if ahora_dt > dt_salida:
-                existe = Asistencia.query.filter_by(
-                    empleado_id=bloque.empleado_id,
-                    fecha=f,
-                    horario_id=bloque.id
-                ).first()
-                
-                if not existe:
-                    ausencia = Asistencia(
-                        empleado_id=bloque.empleado_id,
-                        fecha=f,
-                        horario_id=bloque.id,
-                        estado='ausente',
-                        justificacion='injustificada',
-                        horas_totales=0.0,
-                        hora_entrada_programada=bloque.hora_entrada,
-                        hora_salida_programada=bloque.hora_salida,
-                        cruza_medianoche=bloque.cruza_medianoche
-                    )
-                    db.session.add(ausencia)
-                    ausencias_marcadas += 1
-
-    db.session.commit()
-
-    return jsonify({
-        'status': 'success',
-        'mensaje': 'Pendientes conciliados exitosamente.',
-        'resultado': {
-            'sesiones_cerradas_en_revision': sesiones_cerradas,
-            'ausencias_auto_marcadas': ausencias_marcadas
-        }
-    }), 200
 
 
 # ─── Registro de Asistencia (Kiosko) ───
@@ -366,11 +218,12 @@ def registrar_entrada():
         if asist_existente:
             return jsonify({'error': 'La entrada ya fue registrada para este turno'}), 400
 
-        # Evaluar puntualidad contra el bloque
+        # Evaluar puntualidad contra el bloque (soporta turnos nocturnos)
         estado = 'puntual'
         ent_min = bloque_actual.hora_entrada.hour * 60 + bloque_actual.hora_entrada.minute
         curr_min = ahora.hour * 60 + ahora.minute
-        if curr_min > ent_min + 15:
+        diferencia = (curr_min - ent_min) % 1440  # Aritmética modular para cruce de medianoche
+        if diferencia > 15 and diferencia < 720:  # >15 min tarde, <720 descarta "llegó antes"
             estado = 'retraso'
 
         nueva_asist = Asistencia(

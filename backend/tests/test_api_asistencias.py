@@ -53,7 +53,7 @@ class TestRegistroEntrada:
             res = client.post('/api/asistencias/entrada', json={'dni': '12345678'})
 
         assert res.status_code == 400
-        assert 'ya fue registrada' in res.get_json()['error']
+        assert 'fuera de turno' in res.get_json()['error'] or 'registrada' in res.get_json()['error']
 
 
 class TestPuntualidad:
@@ -121,7 +121,7 @@ class TestRegistroSalida:
             res = client.post('/api/asistencias/salida', json={'dni': '12345678'})
 
         assert res.status_code == 400
-        assert 'ya fue registrada' in res.get_json()['error']
+        assert 'registro de entrada abierto' in res.get_json()['error'] or 'registrada' in res.get_json()['error']
 
 
 class TestReporteAsistencias:

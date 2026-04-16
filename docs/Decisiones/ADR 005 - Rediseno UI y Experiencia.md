@@ -1,4 +1,4 @@
-# ADR 004 - Rediseño UI/UX y Sistema "Templo del Hierro"
+# ADR 005 - Rediseño UI/UX y Sistema "Templo del Hierro"
 
 ## Contexto
 

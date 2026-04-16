@@ -17,7 +17,7 @@ Control de asistencia del personal: registro de entradas y salidas diarias vía 
 ### Campos de Asistencia
 - `empleado_id`, `fecha`, `hora_entrada`, `hora_salida`
 - `foto_entrada_url`, `foto_salida_url` (Supabase Storage)
-- `estado`: `puntual` | `retraso` | `fuera de turno`
+- `estado`: `puntual` | `retraso` | `fuera de turno` | `ausente` | `permiso` | `vacaciones` | `presente`
 - `horas_totales`, `observaciones`
 
 ## Endpoints API
@@ -70,7 +70,7 @@ Control de asistencia del personal: registro de entradas y salidas diarias vía 
   - **Fuera de turno**: marca en un día sin horario asignado
 - No se puede marcar entrada dos veces el mismo día
 - Se requiere entrada previa para registrar la salida
-- Al marcar salida se calculan automáticamente las `horas_totales`
+- Al marcar salida se calculan automáticamente las `horas_totales` (Si el usuario olvida marcar salida, queda como `None` forzando edición manual)
 - Todas las horas se calculan en zona `America/Lima`
 
 ## Dependencias
@@ -88,7 +88,8 @@ Control de asistencia del personal: registro de entradas y salidas diarias vía 
 - [ ] **Exportar PDF** — Botón para generar reporte imprimible (adicional al CSV)
 
 ### Funcionalidades implementadas recientemente
-- [x] **Registro de ausencias automáticas** — Proceso de Reconciliación (`/api/asistencias/conciliar`) que marca como `ausente` a quienes tenían turno y no vinieron, e implementa "Cierre Generoso" automático a quienes olvidaron marcar salida.
+- [x] **Evaluación Perezosa de Ausencias (Lazy Derivation)** — Ya no se insertan registros de `ausente` automáticamente. En cambio, el Dashboard y los Reportes derivan las faltas on-the-fly contrastando los horarios contra las asistencias. Esto incluye "Protección Cold-Start" para empleados nuevos.
+- [x] **Integridad Inquebrantable de BD** — Integración agresiva de `ON DELETE SET NULL` para `horario_id` impidiendo crashes de servidor al editar reglas pasadas.
 - [x] **Gestión histórica de turnos (Snapshots)** — Protección contra manipulaciones si se altera el horario posteriormente.
 - [x] **Edición manual de asistencias** — Admin puede corregir hora de entrada/salida directamente desde el frontend de Reportes.
 
@@ -97,12 +98,11 @@ Control de asistencia del personal: registro de entradas y salidas diarias vía 
 
 ### Infraestructura implementada
 - [x] **Autenticación** — Proteger endpoints admin (solo Kiosco público)
-- [x] **Tests automatizados (E2E)** — Cobertura 100% de la UI y los flujos críticos de la API utilizando **Playwright**.
-- [x] **Reconciliación E2E Temporal** — Implementación de scripts de inyección a SQLite para simular comportamientos de desfase en el pasado simulando Cron Jobs sin afectar dependencias locales.
+- [x] **Tests automatizados (E2E y Unitarios)** — Cobertura robusta de la lógica de aritmética en turnos que cruzan la medianoche y derivación de ausencias.
 
 ## Estado
 
 - [x] Diseño (Stitch mockup)
-- [x] Backend (entrada/salida + evaluación de puntualidad + stats + reconciliación avanzada)
+- [x] Backend (entrada/salida + evaluación de puntualidad + stats lazy evaluation)
 - [x] Frontend (Kiosco + Dashboard + Reportes + Edición Manual)
 - [x] Testing (Suite Playwright de 9 escenarios 100% stable)

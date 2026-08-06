@@ -50,9 +50,11 @@ def get_dashboard_stats():
 
     horas_totales_mes = round(sum(a.horas_totales or 0 for a in asistencias_mes), 1)
 
-    # --- Staff en turno (empleados que marcaron hoy) ---
+    # --- Staff en turno (solo entradas todavia abiertas) ---
     staff_en_turno = []
     for a in asistencias_hoy:
+        if not (a.hora_entrada and not a.hora_salida):
+            continue
         emp = emp_map.get(a.empleado_id)
         if emp:
             staff_en_turno.append({

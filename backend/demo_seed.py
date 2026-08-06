@@ -63,10 +63,27 @@ def _seed_history(empleados, schedules, today):
     for employee, employee_data in zip(empleados, DEMO_EMPLOYEES):
         for days_ago in range(1, 29):
             fecha = today - timedelta(days=days_ago)
-            if fecha.weekday() >= 5 or (days_ago + employee.id) % 9 == 0:
+            if fecha.weekday() >= 5:
                 continue
 
             schedule = schedules[employee.id][fecha.weekday()]
+            if (days_ago + employee.id) % 13 == 0:
+                db.session.add(Asistencia(
+                    empleado_id=employee.id,
+                    fecha=fecha,
+                    horario_id=schedule.id,
+                    hora_entrada_programada=employee_data['entrada'],
+                    hora_salida_programada=employee_data['salida'],
+                    cruza_medianoche=employee_data['cruza_medianoche'],
+                    estado='ausente',
+                    justificacion='permiso',
+                    observaciones='Ausencia ficticia para la demostracion publica.',
+                ))
+                continue
+
+            if (days_ago + employee.id) % 9 == 0:
+                continue
+
             late_minutes = 18 if (days_ago + employee.id) % 7 == 0 else rng.choice([-5, 0, 4, 8])
             start_at = (datetime.combine(fecha, employee_data['entrada']) + timedelta(minutes=late_minutes)).time()
             end_at = (datetime.combine(fecha, employee_data['salida']) + timedelta(minutes=rng.choice([0, 5, 10]))).time()
@@ -83,6 +100,55 @@ def _seed_history(empleados, schedules, today):
                 estado='retraso' if late_minutes > 15 else 'puntual',
                 horas_totales=_work_hours(fecha, start_at, end_at, employee_data['cruza_medianoche']),
             ))
+
+
+def _seed_today_activity(empleados, schedules, today):
+    """Create a small, coherent live snapshot for the public dashboard."""
+    weekday = today.weekday()
+    today_activity = (
+        (0, 4, None),
+        (1, 23, None),
+        (2, 6, 5),
+    )
+
+    for employee_index, late_minutes, exit_offset in today_activity:
+        employee = empleados[employee_index]
+        employee_data = DEMO_EMPLOYEES[employee_index]
+        schedule = schedules[employee.id][weekday]
+
+        if Asistencia.query.filter_by(
+            empleado_id=employee.id,
+            fecha=today,
+            horario_id=schedule.id,
+        ).first():
+            continue
+
+        start_at = (
+            datetime.combine(today, employee_data['entrada'])
+            + timedelta(minutes=late_minutes)
+        ).time()
+        end_at = None
+        if exit_offset is not None:
+            end_at = (
+                datetime.combine(today, employee_data['salida'])
+                + timedelta(minutes=exit_offset)
+            ).time()
+
+        db.session.add(Asistencia(
+            empleado_id=employee.id,
+            fecha=today,
+            horario_id=schedule.id,
+            hora_entrada=start_at,
+            hora_salida=end_at,
+            hora_entrada_programada=employee_data['entrada'],
+            hora_salida_programada=employee_data['salida'],
+            cruza_medianoche=employee_data['cruza_medianoche'],
+            estado='retraso' if late_minutes > 15 else 'puntual',
+            horas_totales=(
+                _work_hours(today, start_at, end_at, employee_data['cruza_medianoche'])
+                if end_at else None
+            ),
+        ))
 
 
 def _load_demo_schedule_data():
@@ -103,8 +169,19 @@ def _load_demo_schedule_data():
         for employee in ordered_employees
     }
 
-    if any(len(schedule) < 5 for schedule in schedules.values()):
-        raise RuntimeError('The gym demo schedules are incomplete.')
+    for employee, employee_data in zip(ordered_employees, DEMO_EMPLOYEES):
+        for weekday in range(7):
+            if weekday not in schedules[employee.id]:
+                schedule = Horario(
+                    empleado_id=employee.id,
+                    dia_semana=weekday,
+                    hora_entrada=employee_data['entrada'],
+                    hora_salida=employee_data['salida'],
+                    cruza_medianoche=employee_data['cruza_medianoche'],
+                )
+                db.session.add(schedule)
+                db.session.flush()
+                schedules[employee.id][weekday] = schedule
 
     return ordered_employees, schedules
 
@@ -145,7 +222,7 @@ def seed_demo_database(app, reset=False):
             employees.append(employee)
             schedules[employee.id] = {}
 
-            for weekday in range(5):
+            for weekday in range(7):
                 schedule = Horario(
                     empleado_id=employee.id,
                     dia_semana=weekday,
@@ -159,6 +236,7 @@ def seed_demo_database(app, reset=False):
 
         today = datetime.now(LIMA_TZ).date()
         _seed_history(employees, schedules, today)
+        _seed_today_activity(employees, schedules, today)
         db.session.add(DemoState(id=1, seeded_for=today))
         db.session.commit()
         print('Gym demo database seeded with fictional data.')
@@ -194,16 +272,16 @@ def refresh_demo_history(app, today=None):
             db.session.commit()
             return False
 
-        if state.seeded_for == today:
-            return False
-
         employees, schedules = _load_demo_schedule_data()
-        db.session.query(Asistencia).delete(synchronize_session=False)
-        _seed_history(employees, schedules, today)
-        state.seeded_for = today
+        if state.seeded_for != today:
+            db.session.query(Asistencia).delete(synchronize_session=False)
+            _seed_history(employees, schedules, today)
+            state.seeded_for = today
+            print('Gym demo attendance history refreshed for the current Lima date.')
+
+        _seed_today_activity(employees, schedules, today)
         db.session.commit()
-        print('Gym demo attendance history refreshed for the current Lima date.')
-        return True
+        return state.seeded_for == today
 
 
 def main():

@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from zoneinfo import ZoneInfo
 from datetime import datetime, timezone, date, timedelta, time
 from app.models import Asistencia, Empleado, Horario
@@ -114,6 +114,29 @@ def get_reporte():
 
 
 # ─── Editar asistencia manualmente ───
+@bp.route('/kiosk-activity', methods=['GET'])
+def get_kiosk_activity():
+    """Public, minimal activity feed for the attendance kiosk."""
+    limit = min(max(request.args.get('limit', 4, type=int), 1), 8)
+    results = db.session.query(Asistencia, Empleado).join(
+        Empleado, Asistencia.empleado_id == Empleado.id
+    ).order_by(
+        Asistencia.fecha.desc(), Asistencia.hora_entrada.desc()
+    ).limit(limit).all()
+
+    return jsonify({
+        'data': [
+            {
+                'empleado_nombre': f'{emp.nombre} {emp.apellido}',
+                'hora_entrada': asistencia.hora_entrada.isoformat() if asistencia.hora_entrada else None,
+                'hora_salida': asistencia.hora_salida.isoformat() if asistencia.hora_salida else None,
+                'estado': asistencia.estado
+            }
+            for asistencia, emp in results
+        ]
+    }), 200
+
+
 @bp.route('/<int:asist_id>', methods=['PUT'])
 @admin_required
 def editar_asistencia(asist_id):
@@ -166,9 +189,9 @@ def registrar_entrada():
     """Registra la entrada de un empleado por su DNI (Kiosko).
     Soporta múltiples bloques por día (turno partido).
     """
-    data = request.json
+    data = request.get_json(silent=True) or {}
     dni = data.get('dni')
-    foto_b64 = data.get('foto_url')
+    foto_b64 = None if current_app.config.get('DEMO_MODE') else data.get('foto_url')
 
     if not dni:
         return jsonify({'error': 'DNI es requerido'}), 400
@@ -270,9 +293,9 @@ def registrar_entrada():
 @bp.route('/salida', methods=['POST'])
 def registrar_salida():
     """Registra la salida usando el DNI. Busca la asistencia abierta más reciente."""
-    data = request.json
+    data = request.get_json(silent=True) or {}
     dni = data.get('dni')
-    foto_b64 = data.get('foto_url')
+    foto_b64 = None if current_app.config.get('DEMO_MODE') else data.get('foto_url')
 
     if not dni:
         return jsonify({'error': 'DNI es requerido'}), 400

@@ -11,6 +11,23 @@ bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 TOKEN_EXPIRY_HOURS = 24
 
 
+def _issue_token(user):
+    payload = {
+        'user_id': user.id,
+        'username': user.username,
+        'rol': user.rol,
+        'exp': datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRY_HOURS)
+    }
+    return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+
+
+def _auth_response(user):
+    return jsonify({
+        'token': _issue_token(user),
+        'user': user.to_dict()
+    }), 200
+
+
 @bp.route('/login', methods=['POST'])
 def login():
     """Authenticate user and return JWT token."""
@@ -26,18 +43,20 @@ def login():
     if not user.activo:
         return jsonify({'error': 'Usuario desactivado'}), 403
 
-    payload = {
-        'user_id': user.id,
-        'username': user.username,
-        'rol': user.rol,
-        'exp': datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRY_HOURS)
-    }
-    token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+    return _auth_response(user)
 
-    return jsonify({
-        'token': token,
-        'user': user.to_dict()
-    }), 200
+
+@bp.route('/demo-login', methods=['POST'])
+def demo_login():
+    """Grant a session only in the isolated portfolio demo environment."""
+    if not current_app.config.get('DEMO_MODE'):
+        return jsonify({'error': 'Ruta no disponible'}), 404
+
+    user = Usuario.query.filter_by(username='demo', activo=True).first()
+    if not user:
+        return jsonify({'error': 'La demo todavia no fue inicializada'}), 503
+
+    return _auth_response(user)
 
 
 @bp.route('/me', methods=['GET'])

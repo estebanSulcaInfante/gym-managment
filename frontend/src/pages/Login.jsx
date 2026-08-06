@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+const isDemoBuild = import.meta.env.VITE_DEMO_MODE === 'true';
+
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loginDemo } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,6 +21,19 @@ export default function Login() {
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginDemo();
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.error || 'La demo no esta disponible en este momento');
     } finally {
       setLoading(false);
     }
@@ -111,6 +126,22 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          {isDemoBuild && (
+            <div className="mt-6 border-t border-white/10 pt-6">
+              <p className="mb-3 text-center text-xs font-semibold text-on-surface-dark-variant">
+                Explora un entorno aislado con datos ficticios.
+              </p>
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={loading}
+                className="w-full rounded-xl border border-primary/60 bg-primary/10 py-3 font-black uppercase tracking-wider text-primary transition-colors hover:bg-primary hover:text-on-primary disabled:opacity-50"
+              >
+                Explorar demo
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Footer hint */}

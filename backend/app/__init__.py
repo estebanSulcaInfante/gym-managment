@@ -7,6 +7,20 @@ import os
 db = SQLAlchemy()
 migrate = Migrate()
 
+
+def _env_flag(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def _cors_origins():
+    configured = os.environ.get('CORS_ORIGINS', '')
+    origins = [origin.strip() for origin in configured.split(',') if origin.strip()]
+    return origins or ['http://localhost:5173', 'http://localhost:5174']
+
+
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     
@@ -22,6 +36,9 @@ def create_app(test_config=None):
             SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
             SQLALCHEMY_DATABASE_URI=database_url or f'sqlite:///{db_path}',
             SQLALCHEMY_TRACK_MODIFICATIONS=False,
+            DEMO_MODE=_env_flag('DEMO_MODE'),
+            DEMO_DATABASE_LABEL=os.environ.get('DEMO_DATABASE_LABEL', ''),
+            CORS_ORIGINS=_cors_origins(),
             SQLALCHEMY_ENGINE_OPTIONS={
                 "pool_size": 10,
                 "pool_recycle": 1800,
@@ -30,6 +47,9 @@ def create_app(test_config=None):
         )
     else:
         app.config.from_mapping(test_config)
+        app.config.setdefault('DEMO_MODE', _env_flag('DEMO_MODE'))
+        app.config.setdefault('DEMO_DATABASE_LABEL', os.environ.get('DEMO_DATABASE_LABEL', ''))
+        app.config.setdefault('CORS_ORIGINS', _cors_origins())
 
     # ensure the instance folder exists
     try:
@@ -37,7 +57,10 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    CORS(app)
+    cors_origins = app.config['CORS_ORIGINS']
+    if isinstance(cors_origins, str):
+        cors_origins = [origin.strip() for origin in cors_origins.split(',') if origin.strip()]
+    CORS(app, resources={r'/api/*': {'origins': cors_origins}})
     db.init_app(app)
     migrate.init_app(app, db)
 

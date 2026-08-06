@@ -40,6 +40,7 @@ export const updateEmpleado = (id, data) => api.put(`/empleados/${id}`, data).th
 export const deactivateEmpleado = (id) => api.delete(`/empleados/${id}`).then(res => res.data);
 
 export const getReportesAsistencia = (limit = 50) => api.get(`/asistencias?limit=${limit}`).then(res => res.data);
+export const getKioskActivity = (limit = 4) => api.get(`/asistencias/kiosk-activity?limit=${limit}`).then(res => res.data);
 export const registrarEntrada = (data) => api.post('/asistencias/entrada', data).then(res => res.data);
 export const registrarSalida = (data) => api.post('/asistencias/salida', data).then(res => res.data);
 export const editarAsistencia = (id, data) => api.put(`/asistencias/${id}`, data).then(res => res.data);
@@ -48,6 +49,7 @@ export const getEmpleadoStats = (id) => api.get(`/stats/empleado/${id}`).then(re
 
 // Auth API
 export const loginUser = (credentials) => api.post('/auth/login', credentials).then(res => res.data);
+export const loginDemoUser = () => api.post('/auth/demo-login').then(res => res.data);
 export const getMe = () => api.get('/auth/me').then(res => res.data);
 
 export default api;

@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import clsx from 'clsx';
-import { registrarEntrada, registrarSalida, getReportesAsistencia } from '../services/api';
+import { registrarEntrada, registrarSalida, getKioskActivity } from '../services/api';
+
+const isDemoBuild = import.meta.env.VITE_DEMO_MODE === 'true';
+const demoDni = '70010010';
 
 export default function Kiosk() {
   const [dni, setDni] = useState('');
@@ -22,7 +25,7 @@ export default function Kiosk() {
   }, []);
 
   const loadActivity = () => {
-    getReportesAsistencia(4).then(response => setRecentActivity(response.data || [])).catch(console.error);
+    getKioskActivity(4).then(response => setRecentActivity(response.data || [])).catch(console.error);
   };
 
   useEffect(() => {
@@ -38,7 +41,7 @@ export default function Kiosk() {
     setLoading(true);
     setStatus({ type: 'idle', message: '' });
     
-    const imageSrc = webcamRef.current ? webcamRef.current.getScreenshot() : null;
+    const imageSrc = isDemoBuild || !webcamRef.current ? null : webcamRef.current.getScreenshot();
 
     try {
       const endpoint = type === 'in' ? registrarEntrada : registrarSalida;
@@ -120,6 +123,19 @@ export default function Kiosk() {
                   />
                 </div>
 
+                {isDemoBuild && (
+                  <div className="mb-4">
+                    <p className="mb-2 text-sm text-on-surface-variant">Usa el registro ficticio para recorrer el flujo.</p>
+                    <button
+                      type="button"
+                      onClick={() => setDni(demoDni)}
+                      className="text-sm font-bold text-primary underline decoration-primary/40 underline-offset-4"
+                    >
+                      Usar DNI de muestra: {demoDni}
+                    </button>
+                  </div>
+                )}
+
                 <button 
                   onClick={() => handleAction(actionType)}
                   disabled={loading || !dni}
@@ -148,13 +164,21 @@ export default function Kiosk() {
 
             {/* Webcam Stream */}
             <div className="bg-slate-900 rounded-[2rem] overflow-hidden relative shadow-[0_8px_24px_rgba(25,28,29,0.06)] border-4 border-white flex flex-col justify-end group">
-              <Webcam
-                audio={false}
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-                videoConstraints={{ facingMode: "user" }}
-              />
+              {isDemoBuild ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950 px-8 text-center text-slate-300">
+                  <span className="material-symbols-outlined text-5xl text-primary">visibility</span>
+                  <p className="font-headline text-lg font-bold text-white">Modo demo sin camara</p>
+                  <p className="text-sm">La experiencia se muestra sin recopilar imagenes ni datos personales.</p>
+                </div>
+              ) : (
+                <Webcam
+                  audio={false}
+                  ref={webcamRef}
+                  screenshotFormat="image/jpeg"
+                  className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+                  videoConstraints={{ facingMode: "user" }}
+                />
+              )}
               {/* Scan Overlay Effect */}
               <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500">
                 <div className="w-full h-1 bg-primary blur-[2px] animate-[scan_2s_ease-in-out_infinite]"></div>
@@ -163,7 +187,7 @@ export default function Kiosk() {
               <div className="relative z-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pb-4">
                  <div className="flex items-center gap-2 max-w-max bg-black/50 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                  Cámara Activa
+                  {isDemoBuild ? 'Datos simulados' : 'Cámara activa'}
                 </div>
               </div>
             </div>

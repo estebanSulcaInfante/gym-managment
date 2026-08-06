@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser as apiLogin, getMe } from '../services/api';
+import { loginUser as apiLogin, loginDemoUser, getMe } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -24,13 +24,18 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const login = async (username, password) => {
-    const data = await apiLogin({ username, password });
+  const persistSession = (data) => {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);
     return data.user;
   };
+
+  const login = async (username, password) => persistSession(
+    await apiLogin({ username, password })
+  );
+
+  const loginDemo = async () => persistSession(await loginDemoUser());
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -41,7 +46,7 @@ export function AuthProvider({ children }) {
   const isAdmin = user?.rol?.toLowerCase() === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, login, loginDemo, logout, isAdmin, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

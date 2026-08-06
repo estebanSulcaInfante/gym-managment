@@ -142,3 +142,31 @@ class TestReporteAsistencias:
         assert 'data' in data
         assert 'total' in data
         assert 'page' in data
+
+
+class TestKioskActivity:
+    """GET /api/asistencias/kiosk-activity (Kiosko - Publico)."""
+
+    def test_actividad_publica_es_minima(self, client, seed_empleado, app):
+        """El kiosko no requiere sesion ni expone datos internos del reporte."""
+        with app.app_context():
+            empleado = Empleado.query.filter_by(dni='12345678').first()
+            db.session.add(Asistencia(
+                empleado_id=empleado.id,
+                fecha=datetime.now().date(),
+                hora_entrada=time(9, 0),
+                estado='puntual',
+                observaciones='No debe salir en el kiosko',
+            ))
+            db.session.commit()
+
+        response = client.get('/api/asistencias/kiosk-activity?limit=1')
+
+        assert response.status_code == 200
+        activity = response.get_json()['data'][0]
+        assert activity == {
+            'empleado_nombre': 'Carlos Test',
+            'hora_entrada': '09:00:00',
+            'hora_salida': None,
+            'estado': 'puntual',
+        }

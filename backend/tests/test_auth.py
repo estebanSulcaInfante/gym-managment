@@ -84,6 +84,31 @@ class TestMe:
         assert res.status_code == 401
 
 
+class TestDemoLogin:
+    """POST /api/auth/demo-login"""
+
+    def test_no_esta_disponible_fuera_de_demo(self, client):
+        res = client.post('/api/auth/demo-login')
+        assert res.status_code == 404
+
+    def test_crea_sesion_solo_con_usuario_demo(self, client, app):
+        app.config['DEMO_MODE'] = True
+        with app.app_context():
+            user = Usuario(
+                username='demo',
+                password_hash=generate_password_hash('not-used-by-demo-login'),
+                rol='Admin',
+                activo=True,
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        res = client.post('/api/auth/demo-login')
+        assert res.status_code == 200
+        assert res.get_json()['user']['username'] == 'demo'
+        assert 'token' in res.get_json()
+
+
 class TestCreateUser:
     """POST /api/auth/users (admin only)"""
 

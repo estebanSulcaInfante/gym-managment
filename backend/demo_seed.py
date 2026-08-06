@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from werkzeug.security import generate_password_hash
 
 from app import create_app, db
-from app.models import Asistencia, Empleado, Horario, Usuario
+from app.models import Asistencia, DemoState, Empleado, Horario, Usuario
 
 
 LIMA_TZ = ZoneInfo('America/Lima')
@@ -57,9 +57,8 @@ def _work_hours(fecha, entrada, salida, cruza_medianoche):
     return round((ended - started).total_seconds() / 3600, 2)
 
 
-def _seed_history(empleados, schedules):
+def _seed_history(empleados, schedules, today):
     rng = random.Random(20260805)
-    today = datetime.now(LIMA_TZ).date()
 
     for employee, employee_data in zip(empleados, DEMO_EMPLOYEES):
         for days_ago in range(1, 29):
@@ -84,6 +83,30 @@ def _seed_history(empleados, schedules):
                 estado='retraso' if late_minutes > 15 else 'puntual',
                 horas_totales=_work_hours(fecha, start_at, end_at, employee_data['cruza_medianoche']),
             ))
+
+
+def _load_demo_schedule_data():
+    employees = Empleado.query.filter(
+        Empleado.dni.in_([data['dni'] for data in DEMO_EMPLOYEES])
+    ).all()
+    employees_by_dni = {employee.dni: employee for employee in employees}
+
+    if len(employees_by_dni) != len(DEMO_EMPLOYEES):
+        raise RuntimeError('The gym demo employees are incomplete.')
+
+    ordered_employees = [employees_by_dni[data['dni']] for data in DEMO_EMPLOYEES]
+    schedules = {
+        employee.id: {
+            schedule.dia_semana: schedule
+            for schedule in Horario.query.filter_by(empleado_id=employee.id).all()
+        }
+        for employee in ordered_employees
+    }
+
+    if any(len(schedule) < 5 for schedule in schedules.values()):
+        raise RuntimeError('The gym demo schedules are incomplete.')
+
+    return ordered_employees, schedules
 
 
 def seed_demo_database(app, reset=False):
@@ -134,7 +157,9 @@ def seed_demo_database(app, reset=False):
                 db.session.flush()
                 schedules[employee.id][weekday] = schedule
 
-        _seed_history(employees, schedules)
+        today = datetime.now(LIMA_TZ).date()
+        _seed_history(employees, schedules, today)
+        db.session.add(DemoState(id=1, seeded_for=today))
         db.session.commit()
         print('Gym demo database seeded with fictional data.')
         return True
@@ -149,6 +174,36 @@ def ensure_demo_database(app):
     if not app.config.get('DEMO_MODE'):
         return False
     return seed_demo_database(app)
+
+
+def refresh_demo_history(app, today=None):
+    """Roll the fictional attendance window forward when Lima reaches a new day."""
+    with app.app_context():
+        _assert_demo_target(app)
+        db.create_all()
+
+        if not Usuario.query.filter_by(username='demo').first():
+            return seed_demo_database(app)
+
+        today = today or datetime.now(LIMA_TZ).date()
+        state = db.session.get(DemoState, 1)
+        if state is None:
+            # Existing demo deployments predate the tracking table. Their current
+            # seed already uses today's date, so begin tracking without disruption.
+            db.session.add(DemoState(id=1, seeded_for=today))
+            db.session.commit()
+            return False
+
+        if state.seeded_for == today:
+            return False
+
+        employees, schedules = _load_demo_schedule_data()
+        db.session.query(Asistencia).delete(synchronize_session=False)
+        _seed_history(employees, schedules, today)
+        state.seeded_for = today
+        db.session.commit()
+        print('Gym demo attendance history refreshed for the current Lima date.')
+        return True
 
 
 def main():

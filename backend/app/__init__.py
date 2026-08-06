@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -23,6 +25,7 @@ def _cors_origins():
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
+    demo_refresh_state = {'checked_on': None}
     
     if test_config is None:
         db_path = os.path.join(app.instance_path, 'gym.db')
@@ -69,6 +72,23 @@ def create_app(test_config=None):
     app.register_blueprint(asistencias_bp)
     app.register_blueprint(stats_bp)
     app.register_blueprint(auth_bp)
+
+    @app.before_request
+    def refresh_public_demo_history():
+        if (
+            not app.config.get('DEMO_MODE')
+            or app.config.get('DEMO_DATABASE_LABEL') != 'gym-demo'
+        ):
+            return None
+
+        today = datetime.now(ZoneInfo('America/Lima')).date()
+        if demo_refresh_state['checked_on'] == today:
+            return None
+
+        from demo_seed import refresh_demo_history
+        refresh_demo_history(app, today=today)
+        demo_refresh_state['checked_on'] = today
+        return None
 
     @app.route('/health')
     def health_check():

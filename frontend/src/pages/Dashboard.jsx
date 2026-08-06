@@ -26,10 +26,10 @@ export default function Dashboard() {
 
   if (loading || !stats) return <div className="p-8 text-center text-slate-500">Cargando métricas...</div>;
 
-  const statusColor = (estado) => {
-    if (estado === 'puntual') return 'text-emerald-500 border-emerald-500 bg-emerald-500';
-    if (estado === 'retraso') return 'text-warning border-warning bg-warning';
-    return 'text-slate-400 border-slate-400 bg-slate-400';
+  const statusAvatarTone = (estado) => {
+    if (estado === 'puntual') return 'border-emerald-500 bg-emerald-500';
+    if (estado === 'retraso') return 'border-warning bg-warning';
+    return 'border-slate-400 bg-slate-400';
   };
 
   const alertIcon = (tipo) => {
@@ -186,7 +186,7 @@ export default function Dashboard() {
                   <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
                     <div className="flex items-center gap-3">
                       {/* Status Ring Avatar */}
-                      <div className={`w-11 h-11 rounded-full flex items-center justify-center font-black text-on-primary text-sm font-headline shrink-0 border-2 ${statusColor(s.estado)} shadow-[0_0_10px_rgba(0,0,0,0.5)]`}>
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center font-black text-slate-950 text-sm font-headline shrink-0 border-2 ${statusAvatarTone(s.estado)} shadow-[0_0_10px_rgba(0,0,0,0.5)]`}>
                         {s.nombre.split(' ').map(n => n[0]).join('')}
                       </div>
                       <div className="min-w-0">

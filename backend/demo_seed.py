@@ -86,13 +86,16 @@ def _seed_history(empleados, schedules):
             ))
 
 
-def reset_demo_database():
-    app = create_app()
+def seed_demo_database(app, reset=False):
     with app.app_context():
         _assert_demo_target(app)
 
-        db.drop_all()
+        if reset:
+            db.drop_all()
         db.create_all()
+
+        if not reset and Usuario.query.filter_by(username='demo').first():
+            return False
 
         demo_user = Usuario(
             username='demo',
@@ -134,6 +137,18 @@ def reset_demo_database():
         _seed_history(employees, schedules)
         db.session.commit()
         print('Gym demo database seeded with fictional data.')
+        return True
+
+
+def reset_demo_database():
+    return seed_demo_database(create_app(), reset=True)
+
+
+def ensure_demo_database(app):
+    """Create the disposable demo data on first boot without resetting it."""
+    if not app.config.get('DEMO_MODE'):
+        return False
+    return seed_demo_database(app)
 
 
 def main():

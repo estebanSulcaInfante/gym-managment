@@ -59,10 +59,10 @@ Ademas requiere estas dos banderas explicitas:
 python demo_seed.py --reset --confirm-gym-demo-reset
 ```
 
-En Render se ejecuta una vez con `initialDeployHook`. Para restaurar la demo
-despues, ejecutar ese mismo comando manualmente desde la Shell del servicio.
-No se programa un reinicio automatico: asi una persona que evalua la demo no
-pierde su sesion ni los cambios mientras la explora.
+La API comprueba al arrancar si estos datos existen y los crea una sola vez.
+Para restaurar la demo despues, ejecutar ese mismo comando manualmente desde
+la Shell del servicio. No se programa un reinicio automatico: asi una persona
+que evalua la demo no pierde su sesion ni los cambios mientras la explora.
 
 ## Provisionamiento
 
